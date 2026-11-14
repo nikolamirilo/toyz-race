@@ -114,8 +114,10 @@ export function createUI(root, { tracks = [], cars = [], items = [], handlers = 
       syncTouch();
     },
     hideResults() { results.hide(); syncTouch(); },
-    /** { masterVolume, musicVolume, sfxVolume, quality, playerName, cameraShake, autoGas } */
+    /** { masterVolume, musicVolume, sfxVolume, quality, playerName, cameraShake, cameraView, autoGas } */
     getSettings() { return store.getSettings(); },
+    /** persist the in-race camera view ('close' | 'medium' | 'far') chosen with C / the camera button */
+    setCameraView(v) { store.settings.cameraView = v; store.saveSettings(); },
     /**
      * On-screen touch controls, polled by the integrator every frame (stable object, never replaced):
      * { active: bool — controls are on screen, throttle: -1|0|1, steer: -1|0|1 (+1 = left), handbrake: bool, fire: bool (held) }

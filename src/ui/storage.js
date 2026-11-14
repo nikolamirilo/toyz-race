@@ -37,6 +37,7 @@ export const DEFAULT_SETTINGS = {
   quality: 'high',
   playerName: 'Player',
   cameraShake: true,
+  cameraView: null, // 'close' | 'medium' | 'far'. null = not chosen yet -> medium on touch, far on desktop
   autoGas: null, // touch controls: accelerate automatically. null = not chosen yet -> ON on touch devices
 };
 
@@ -76,6 +77,7 @@ function sanitizeSettings(raw) {
     playerName: cleanName(r.playerName),
     cameraShake: typeof r.cameraShake === 'boolean' ? r.cameraShake : d.cameraShake,
     autoGas: typeof r.autoGas === 'boolean' ? r.autoGas : null,
+    cameraView: ['close', 'medium', 'far'].includes(r.cameraView) ? r.cameraView : null,
   };
 }
 
@@ -130,7 +132,10 @@ export function createStore() {
     records,
     /** copy of the settings as handed to the integrator: autoGas resolved to a boolean (default ON on touch devices) */
     getSettings() {
-      return Object.assign({}, settings, { autoGas: settings.autoGas == null ? isTouch() : !!settings.autoGas });
+      return Object.assign({}, settings, {
+        autoGas: settings.autoGas == null ? isTouch() : !!settings.autoGas,
+        cameraView: settings.cameraView || (isTouch() ? 'medium' : 'far'),
+      });
     },
     saveSettings() { save(STORAGE_KEYS.settings, settings); },
     saveSel() { save(STORAGE_KEYS.menu, sel); },

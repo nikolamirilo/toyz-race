@@ -268,13 +268,11 @@ function buildKart(b, C, A) {
   });
   // seat
   b.profile([[-0.44, 0.17], [-0.04, 0.17], [-0.02, 0.25], [-0.28, 0.27], [-0.36, 0.6], [-0.47, 0.6]], 0.38, A);
-  // toy driver: torso, helmet, visor
-  b.cyl(0.12, 0.26, 0, 0.4, -0.2, 'y', '#2b4c9b', 'paint', 8, 0.1);
-  b.sphere(0.15, 0, 0.66, -0.2, '#ffffff');
-  b.box(0.31, 0.03, 0.31, 0, 0.7, -0.2, A);
-  b.box(0.2, 0.075, 0.06, 0, 0.665, -0.075, DARK, 'glass');
-  // arms + steering column and wheel
-  b.mirror((s) => b.tube(s * 0.13, 0.47, -0.16, s * 0.09, 0.45, 0.2, 0.03, '#2b4c9b'));
+  // RC kit instead of a driver: battery pack strapped to the seat + receiver box
+  b.box(0.26, 0.12, 0.2, 0, 0.31, -0.22, DARK, 'paint', 0.03);
+  b.box(0.27, 0.025, 0.05, 0, 0.375, -0.22, A);
+  b.box(0.12, 0.07, 0.1, 0, 0.27, 0.05, GREY, 'paint', 0.02);
+  // steering column and wheel
   b.tube(0, 0.2, 0.55, 0, 0.45, 0.24, 0.02, GREY);
   b.torus(0.1, 0.02, 0, 0.455, 0.235, DARK, 'paint', -0.85);
   // engine + exhaust
@@ -508,10 +506,10 @@ function buildFormula(b, C, A) {
   // engine cover / airbox fin
   b.profile([[-0.14, 0.4], [-0.28, 0.6], [-0.4, 0.6], [-0.96, 0.3], [-0.2, 0.3]], 0.2, A, 'paint', { taper: (z) => (z < -0.4 ? Math.max(0.35, 1 + (z + 0.4) * 1.2) : 1) });
   b.box(0.14, 0.09, 0.02, 0, 0.53, -0.2, DARK, 'paint', -0.6);
-  // cockpit + driver helmet
+  // closed toy cockpit (no driver): moulded cover + painted-on windscreen
   b.box(0.24, 0.02, 0.3, 0, 0.405, -0.02, DARK);
-  b.sphere(0.1, 0, 0.47, -0.04, A);
-  b.box(0.15, 0.05, 0.05, 0, 0.475, 0.04, DARK, 'glass');
+  b.sphere(0.12, 0, 0.42, -0.04, C, 'paint', 1, 0.55, 1.6, 10);
+  b.box(0.15, 0.04, 0.05, 0, 0.455, 0.08, DARK, 'glass', -0.5);
   // front wing (two elements) + rear wing
   b.box(1.1, 0.025, 0.24, 0, 0.09, 1.08, A);
   b.box(1.08, 0.02, 0.12, 0, 0.16, 1.0, C, 'paint', -0.25);

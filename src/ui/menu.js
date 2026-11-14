@@ -472,6 +472,12 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
         set: (v) => { settings.quality = v; emitSettings(); },
         sound,
       }),
+      selector('Camera view', {
+        options: () => [{ value: 'close', label: 'Close' }, { value: 'medium', label: 'Medium' }, { value: 'far', label: 'Far' }],
+        get: () => store.getSettings().cameraView,
+        set: (v) => { settings.cameraView = v; emitSettings(); },
+        sound,
+      }),
       selector('Camera shake', {
         options: () => [{ value: false, label: 'Off' }, { value: true, label: 'On' }],
         get: () => settings.cameraShake,
@@ -489,7 +495,7 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
     });
     autoItem.el.classList.add('tr-if-touch');
     autoItem.skip = () => !isTouch();
-    s.items.splice(5, 0, autoItem);
+    s.items.splice(6, 0, autoItem);
     s.items.forEach((it) => rows.appendChild(it.el));
     const backItem = button('Back', null, () => { sound('ui-back'); s.back(); }, 'tr-small');
     backItem.enter = () => s.back();
