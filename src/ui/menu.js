@@ -5,6 +5,7 @@
 import { el, esc, fmtTime, carSvg, logoHtml, starsHtml, isTouch } from './util.js';
 import { createNav, button, selector, slider, textInput } from './nav.js';
 import { cleanName } from './storage.js';
+import { MULTIPLAYER } from '../flags.js';
 
 const DIFFICULTIES = [
   { value: 0, label: 'Easy' },
@@ -169,12 +170,13 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
     };
     s.items = [
       button('Single Race', 'Pick a track, beat the pack', pick('race')),
-      button('Multiplayer', 'Host or join a room · up to 8', () => { mp.msg = ''; go('mp', { index: 1 }); }),
+      MULTIPLAYER && button('Multiplayer', 'Host or join a room · up to 8', () => { mp.msg = ''; go('mp', { index: 1 }); }),
       button('Championship', tracks.length + ' tracks · points 10-8-6-5-4-3-2-1', pick('championship')),
       button('Time Trial', 'Just you and the clock', pick('timetrial')),
       button('Options', 'Sound, graphics, driver', () => { returnTo = 'main'; go('options', { index: 0 }); }),
       button('Controls', 'Keys and pickups', () => { returnTo = 'main'; go('controls', { index: 0 }); }),
     ];
+    s.items = s.items.filter(Boolean);
     s.items.forEach((it) => list.appendChild(it.el));
     s.index = Math.min(s.items.length - 1, Math.max(0, sel.mainIndex | 0));
     s.onShow = () => { hello.innerHTML = 'Driver: <b>' + esc(settings.playerName) + '</b>'; };
@@ -527,7 +529,7 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
       '<div class="tr-keys tr-if-keys">' + keyRows.map(([k, t]) => k + '<span>' + esc(t) + '</span>').join('') + '</div>' +
       '<div class="tr-keys tr-if-touch">' + touchRows.map(([k, t]) => k + '<span>' + esc(t) + '</span>').join('') + '</div></div>' +
       '<div class="tr-card"><h3>Pickups</h3><div class="tr-items">' + (itemsHtml || '<small>Smash a crate to grab a random item.</small>') + '</div></div>' +
-      '</div><div class="tr-note"><b>Multiplayer:</b> host a room and share the code or link; empty seats are bots.</div>' +
+      '</div>' + (MULTIPLAYER ? '<div class="tr-note"><b>Multiplayer:</b> host a room and share the code or link; empty seats are bots.</div>' : '') +
       '<div class="tr-foot-row" data-r="foot"></div></div>' +
       hints([[['ENTER'], 'Back'], [['ESC'], 'Back']]));
     const backItem = button('Got it', null, () => s.back(), 'tr-small');
@@ -537,7 +539,8 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
   }
 
   // ================================================================ multiplayer: name / host / join
-  {
+  // Both multiplayer screens are built only when the feature is compiled in (see src/flags.js).
+  if (MULTIPLAYER) {
     const s = addScreen('mp', 'tr-mp tr-left',
       '<div class="tr-side">' +
       '<div class="tr-head">' + BACK_BTN + '<h2>Multiplayer</h2><span class="tr-chip o">Up to 8</span></div>' +
@@ -677,7 +680,7 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
   }
 
   // ================================================================ multiplayer: lobby
-  {
+  if (MULTIPLAYER) {
     const s = addScreen('lobby', 'tr-lobby tr-left',
       '<div class="tr-side">' +
       '<div class="tr-head"><h2>Lobby</h2><span class="tr-chip" data-r="role"></span><span class="tr-lb-status" data-r="status"></span></div>' +
@@ -898,6 +901,7 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
   }
 
   function showLobby(data) {
+    if (!MULTIPLAYER) return;
     const changingCar = visible && mp.active && current === 'car' && mp.purpose === 'lobby';
     mp.busy = false;
     mp.msg = '';
@@ -927,11 +931,13 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
   }
 
   function updateLobby(partial) {
+    if (!MULTIPLAYER) return;
     if (!visible || !mp.active || !partial) return;
     applyLobby(partial, false);
   }
 
   function showMpError(message) {
+    if (!MULTIPLAYER) return;
     mp.busy = false;
     mp.active = false;
     mp.purpose = null;
@@ -990,6 +996,7 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
       mp.active = false;
       let name = SCREEN_ALIASES[screen] || screen || 'title';
       if (name === 'lobby') name = 'mp'; // the lobby itself only opens through showLobby(data)
+      if (name === 'mp' && !MULTIPLAYER) name = 'main';
       if (name === 'mp') {
         mp.msg = '';
         const jc = opts && opts.joinCode != null ? cleanCode(opts.joinCode) : '';

@@ -14,6 +14,33 @@ Model: **host-authoritative world, client-authoritative own car.**
 - Effects on a remote human's car (weapon hit → spin/impulse/launch, turbo, boost) are sent by the host as a targeted
   message and applied by that client to its own car.
 
+## 0. Feature flag — multiplayer is OPT-IN at build time
+
+Everything in this document is compiled in only when the env var `VITE_MULTIPLAYER` is set to
+`1`/`true`/`on`/`yes`. **Unset means OFF**, which is the default for every script and for plain
+node (tests, the UI harness), where Vite's `define` never runs.
+
+```
+npm run dev        npm run build        npm run preview        npm run serve        # single-player
+npm run dev:mp     npm run build:mp     npm run preview:mp     npm run serve:mp     # multiplayer
+```
+
+`src/flags.js` exports the resolved `MULTIPLAYER` constant; `vite.config.js` substitutes it via
+`define: { __MULTIPLAYER__ }`. Because it folds to a literal, a flag-off build is *stripped*, not
+merely hidden:
+
+- `src/net/*` is dropped from the bundle (no WebSocket client, no `joinUrls`, no `/mp/info` fetch).
+- The `mp` and `lobby` screens are never built; the main menu has no "Multiplayer" entry and
+  `ui.showLobby` / `updateLobby` / `showMpError` are no-ops. A `?join=CODE` URL is ignored.
+- The relay is not attached to the dev, preview or standalone server, and `/mp*` answers `404`.
+
+The flag must match between build and serve: a `build:mp` bundle needs `serve:mp`, or the client
+will look for a relay that is not there. The build and the server each print which mode they are in.
+
+**Not stripped:** the host/client sync inside `src/race/*` (`net.js`, `puppet.js`) stays in the
+bundle, dormant — `Race` only activates it when it is constructed with a `net` option, which cannot
+happen when the flag is off. Gating it too would mean teaching `src/race` about build flags.
+
 Three owners. Each edits ONLY its own area.
 
 ## 1. Transport — owner: net agent. Files: `server/*`, `vite.config.js`, `src/net/*`, may add deps to package.json (`ws`).

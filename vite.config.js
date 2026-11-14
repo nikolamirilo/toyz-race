@@ -2,6 +2,13 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { attachRelay, mpInfoMiddleware } from './server/relay.js';
 
+// ---------------------------------------------------------------- feature flags
+// Multiplayer is opt-in at build time. Unset => OFF: the relay is not attached to the dev /
+// preview server, and `__MULTIPLAYER__` folds to false so Rollup drops src/net/*, the lobby
+// screens and the whole net glue from the bundle. See src/flags.js.
+const MULTIPLAYER = /^(1|true|on|yes)$/i.test(String(process.env.VITE_MULTIPLAYER || ''));
+console.log(`  toyz-race: multiplayer ${MULTIPLAYER ? 'ON (VITE_MULTIPLAYER set)' : 'OFF (set VITE_MULTIPLAYER=1 to build it in)'}`);
+
 // Multiplayer relay on the same port as the dev / preview server (ws upgrade path /mp, GET /mp/info).
 function multiplayerRelay() {
   const wire = (server) => {
@@ -30,6 +37,20 @@ self.addEventListener('activate', (event) => {
   })());
 });
 `;
+// Mirrors the standalone server: with the flag off, /mp* is a 404 instead of the SPA fallback.
+function relayDisabled() {
+  const wire = (server) => {
+    server.middlewares.use((req, res, next) => {
+      const p = (req.url || '').split('?')[0].replace(/\/+$/, '');
+      if (p !== '/mp' && !p.startsWith('/mp/')) return next();
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.end('Multiplayer is disabled in this build.');
+    });
+  };
+  return { name: 'toyz-race-relay-disabled', configureServer: wire, configurePreviewServer: wire };
+}
+
 function devServiceWorkerOff() {
   return {
     name: 'toyz-race-dev-sw-off',
@@ -48,7 +69,8 @@ function devServiceWorkerOff() {
 
 export default defineConfig({
   plugins: [
-    multiplayerRelay(),
+    // Falsy entries are ignored by Vite: with the flag off the relay is never wired up.
+    MULTIPLAYER ? multiplayerRelay() : relayDisabled(),
     devServiceWorkerOff(),
     // Service worker (workbox generateSW) -> dist/sw.js. Registered by src/pwa/register.js in production builds only.
     VitePWA({
@@ -70,6 +92,8 @@ export default defineConfig({
       },
     }),
   ],
+  // Substituted into the sources; src/flags.js turns it into the exported MULTIPLAYER constant.
+  define: { __MULTIPLAYER__: JSON.stringify(MULTIPLAYER) },
   server: { host: true, port: 5173, strictPort: true },
   preview: { host: true, port: 5173, strictPort: true },
 });

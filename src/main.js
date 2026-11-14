@@ -8,6 +8,7 @@ import { createInput } from './core/input.js';
 import { GameCamera } from './core/camera.js';
 import { createGraphics } from './core/graphics.js';
 import { createNet } from './net/index.js';
+import { MULTIPLAYER } from './flags.js';
 import { createNameTags } from './core/nametags.js';
 import { initStage } from './core/stage.js';
 import { initPWA, createInstallHint } from './pwa/register.js';
@@ -33,7 +34,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 1500);
 const gameCam = new GameCamera(camera);
 const gfx = createGraphics(renderer, scene, camera);
-const net = createNet();
+const net = MULTIPLAYER ? createNet() : null;
 const nameTags = createNameTags(scene);
 const mp = { active: false, settings: { trackId: TRACKS[0].id, laps: 3, difficulty: 1, bots: 7 }, peerIds: [] };
 
@@ -269,7 +270,7 @@ function wireRace(race) {
     gameCam.addShake(s * 0.7);
   });
   race.on('raceOver', (standings) => onRaceOver(standings));
-  if (game.config && game.config.net) race.on('net', (msg, toId) => {
+  if (MULTIPLAYER && game.config && game.config.net) race.on('net', (msg, toId) => {
     // Client packets without a target are meant for the host only.
     if (!toId && !net.isHost) { const h = net.peers.find((p) => p.isHost); toId = h && h.id; }
     net.send('r', msg, toId || undefined);
@@ -315,7 +316,7 @@ function onRaceOver(standings) {
   }
 
   closeOverlay();
-  ui.showResults({ standings, mode: cfg.mode, trackName: game.track.name, newRecord, championship, multiplayer: mp.active ? { isHost: net.isHost } : undefined });
+  ui.showResults({ standings, mode: cfg.mode, trackName: game.track.name, newRecord, championship, multiplayer: MULTIPLAYER && mp.active ? { isHost: net.isHost } : undefined });
 }
 
 function startChampionshipRound() {
@@ -346,10 +347,12 @@ function toMenu(screen = 'title', opts) {
 
 // ---------------------------------------------------------------- multiplayer
 function lobbyPlayers() {
+  if (!MULTIPLAYER) return [];
   return net.peers.map((p) => ({ id: p.id, name: p.name, carId: (p.meta && p.meta.carId) || CARS[0].id, isHost: !!p.isHost, isYou: p.id === net.id }));
 }
 
 function showLobby() {
+  if (!MULTIPLAYER) return;
   endRace();
   game.overlay = false;
   game.state = 'menu';
@@ -370,6 +373,7 @@ function showLobby() {
 }
 
 function mpEnter(promise) {
+  if (!MULTIPLAYER) return;
   audio.unlock();
   promise.then(() => {
     mp.active = true;
@@ -383,12 +387,14 @@ function mpEnter(promise) {
 }
 
 function mpLeave() {
+  if (!MULTIPLAYER) return;
   if (!mp.active && !net.connected) return;
   mp.active = false;
   try { net.leave(); } catch (e) { /* already closed */ }
 }
 
 function mpStart(settings) {
+  if (!MULTIPLAYER) return;
   if (!net.isHost) return;
   mp.settings = { ...mp.settings, ...settings };
   const me = net.peers.find((p) => p.id === net.id) || {};
@@ -405,44 +411,47 @@ function mpStart(settings) {
   net.send('start', { trackId: cfg.trackId, laps: cfg.laps, difficulty: cfg.difficulty, roster: game.race.getRoster() });
 }
 
-net.on('message', (type, data, fromId) => {
-  if (!mp.active) return;
-  if (type === 'r') {
-    if (game.race && game.race.netReceive) game.race.netReceive(data, fromId);
-  } else if (type === 'start' && !net.isHost && data && Array.isArray(data.roster)) {
-    const mine = data.roster.find((r) => r.netId === net.id);
-    if (!mine) return;
-    startRace({
-      mode: 'race', trackId: data.trackId, laps: data.laps, difficulty: data.difficulty, carId: mine.carId,
-      playerName: mine.name, opponents: data.roster.length - 1,
-      net: { role: 'client', localId: net.id, roster: data.roster },
-    });
-  } else if (type === 'lobby' && !net.isHost) {
-    showLobby();
-  }
-});
-net.on('peers', () => {
-  if (!mp.active) return;
-  const ids = net.peers.map((p) => p.id);
-  if (net.isHost && game.race && game.race.dropRemote) {
-    for (const id of mp.peerIds) if (!ids.includes(id)) game.race.dropRemote(id);
-  }
-  mp.peerIds = ids;
-  ui.updateLobby({ players: lobbyPlayers() });
-});
-net.on('room', (room) => {
-  if (!mp.active || !room || !room.settings) return;
-  mp.settings = room.settings;
-  ui.updateLobby({ settings: room.settings });
-  if (game.state === 'menu' && ui.isLobbyVisible()) onPreview({ screen: 'lobby', trackId: room.settings.trackId });
-});
-net.on('ping', (ms) => { if (mp.active) ui.updateLobby({ status: `Connected · ping ${Math.round(ms)} ms` }); });
-net.on('close', (info) => {
-  if (!mp.active) return;
-  mp.active = false;
-  toMenu('mp');
-  ui.showMpError(`Disconnected: ${(info && info.reason) || 'connection lost'}`);
-});
+// All multiplayer glue below is dropped from the bundle when the flag is off.
+if (MULTIPLAYER) {
+  net.on('message', (type, data, fromId) => {
+    if (!mp.active) return;
+    if (type === 'r') {
+      if (game.race && game.race.netReceive) game.race.netReceive(data, fromId);
+    } else if (type === 'start' && !net.isHost && data && Array.isArray(data.roster)) {
+      const mine = data.roster.find((r) => r.netId === net.id);
+      if (!mine) return;
+      startRace({
+        mode: 'race', trackId: data.trackId, laps: data.laps, difficulty: data.difficulty, carId: mine.carId,
+        playerName: mine.name, opponents: data.roster.length - 1,
+        net: { role: 'client', localId: net.id, roster: data.roster },
+      });
+    } else if (type === 'lobby' && !net.isHost) {
+      showLobby();
+    }
+  });
+  net.on('peers', () => {
+    if (!mp.active) return;
+    const ids = net.peers.map((p) => p.id);
+    if (net.isHost && game.race && game.race.dropRemote) {
+      for (const id of mp.peerIds) if (!ids.includes(id)) game.race.dropRemote(id);
+    }
+    mp.peerIds = ids;
+    ui.updateLobby({ players: lobbyPlayers() });
+  });
+  net.on('room', (room) => {
+    if (!mp.active || !room || !room.settings) return;
+    mp.settings = room.settings;
+    ui.updateLobby({ settings: room.settings });
+    if (game.state === 'menu' && ui.isLobbyVisible()) onPreview({ screen: 'lobby', trackId: room.settings.trackId });
+  });
+  net.on('ping', (ms) => { if (mp.active) ui.updateLobby({ status: `Connected · ping ${Math.round(ms)} ms` }); });
+  net.on('close', (info) => {
+    if (!mp.active) return;
+    mp.active = false;
+    toMenu('mp');
+    ui.showMpError(`Disconnected: ${(info && info.reason) || 'connection lost'}`);
+  });
+}
 
 function closeOverlay() {
   if (!game.overlay) return;
@@ -513,16 +522,16 @@ const ui = createUI(document.getElementById('ui-root'), {
     onMpHost({ playerName, carId }) { mpEnter(net.host({ name: playerName || 'Host', meta: { carId } })); },
     onMpJoin({ code, playerName, carId }) { mpEnter(net.join(code, { name: playerName || 'Player', meta: { carId } })); },
     onMpLeave() { mpLeave(); },
-    onMpCar({ carId }) { if (mp.active) net.setMeta({ carId }); },
+    onMpCar({ carId }) { if (MULTIPLAYER && mp.active) net.setMeta({ carId }); },
     onMpSettings(settings) {
-      if (!mp.active || !net.isHost) return;
+      if (!MULTIPLAYER || !mp.active || !net.isHost) return;
       mp.settings = { ...mp.settings, ...settings };
       net.setRoomState({ settings: mp.settings });
       onPreview({ screen: 'lobby', trackId: mp.settings.trackId });
     },
     onMpStart(settings) { mpStart(settings || mp.settings); },
     onMpLobby() {
-      if (!mp.active) { toMenu('main'); return; }
+      if (!MULTIPLAYER || !mp.active) { toMenu('main'); return; }
       if (net.isHost) { net.setRoomState({ locked: false }); net.send('lobby', {}); }
       showLobby();
     },
@@ -700,7 +709,7 @@ applySettings(ui.getSettings());
 if (!game.quality) { game.quality = 'medium'; applyQuality('medium'); }
 loadTrack(TRACKS[0].id);
 const joinCode = (new URLSearchParams(location.search).get('join') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
-if (joinCode.length === 4) { game.preview.screen = 'mp'; ui.showMenu('mp', { joinCode }); } else ui.showMenu('title');
+if (MULTIPLAYER && joinCode.length === 4) { game.preview.screen = 'mp'; ui.showMenu('mp', { joinCode }); } else ui.showMenu('title');
 audio.startMusic('menu');
 requestAnimationFrame(frame);
 

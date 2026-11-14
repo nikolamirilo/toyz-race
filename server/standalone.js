@@ -6,6 +6,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { attachRelay, handleMpInfo, lanAddresses } from './relay.js';
 
+// Same opt-in switch as the client build (see src/flags.js): unset => no relay, no /mp/info.
+// Build and serve must agree, so use `npm run serve:mp` with a `npm run build:mp` bundle.
+export const MULTIPLAYER = /^(1|true|on|yes)$/i.test(String(process.env.VITE_MULTIPLAYER || ''));
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -50,12 +54,24 @@ function statFile(p) {
   }
 }
 
+/** True for the relay path itself and anything under it ('/mp', '/mp/', '/mp/info'), not '/mpx'. */
+function isRelayPath(url, relayPath) {
+  const p = String(url || '').split('?')[0].replace(/\/+$/, '');
+  return p === relayPath || p.startsWith(relayPath + '/');
+}
+
 /** Create (not yet listening) http server serving `root` + relay. */
-export function createStandaloneServer({ root, relayPath = '/mp' } = {}) {
+export function createStandaloneServer({ root, relayPath = '/mp', multiplayer = MULTIPLAYER } = {}) {
   const distDir = path.resolve(root || path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist'));
 
   const server = http.createServer((req, res) => {
-    if (handleMpInfo(req, res, { path: relayPath })) return;
+    if (multiplayer && handleMpInfo(req, res, { path: relayPath })) return;
+    // With multiplayer off the relay path simply does not exist: say so, rather than letting
+    // the SPA fallback below hand back index.html with a 200 for /mp/info.
+    if (!multiplayer && isRelayPath(req.url, relayPath)) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Multiplayer is disabled on this server.');
+      return;
+    }
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.writeHead(405, { Allow: 'GET, HEAD' }).end();
       return;
@@ -115,11 +131,12 @@ export function createStandaloneServer({ root, relayPath = '/mp' } = {}) {
       .pipe(res);
   });
 
-  const relay = attachRelay(server, { path: relayPath });
+  const relay = multiplayer ? attachRelay(server, { path: relayPath }) : null;
   // Nothing else speaks websocket here: refuse other upgrade paths instead of leaving them hanging.
+  // With multiplayer off that is every upgrade, including /mp.
   server.on('upgrade', (req, socket) => {
     const p = (req.url || '').split('?')[0].replace(/\/+$/, '');
-    if (p !== relayPath) socket.destroy();
+    if (!multiplayer || p !== relayPath) socket.destroy();
   });
   return { server, relay, distDir };
 }
@@ -137,6 +154,7 @@ if (isMain) {
     if (!statFile(path.join(distDir, 'index.html'))) console.log('  (no build found: run "npm run build" first)');
     console.log(`\n  Local:   http://localhost:${port}/`);
     for (const a of lanAddresses()) console.log(`  Network: http://${a}:${port}/`);
-    console.log('\n  Multiplayer relay on /mp - share a Network URL with players on your LAN.\n');
+    if (MULTIPLAYER) console.log('\n  Multiplayer relay on /mp - share a Network URL with players on your LAN.\n');
+    else console.log('\n  Multiplayer is OFF (VITE_MULTIPLAYER not set): no relay on /mp.\n');
   });
 }
