@@ -1,0 +1,21 @@
+{
+  "name": "toyz-race",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5173 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --port 5173 --strictPort",
+    "serve": "node server/standalone.js",
+    "icons": "node scripts/generate-icons.mjs"
+  },
+  "dependencies": {
+    "three": "^0.170.0",
+    "ws": "^8.22.2"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "vite-plugin-pwa": "^2.0.0"
+  }
+}
