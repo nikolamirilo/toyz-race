@@ -25,6 +25,12 @@ const MAX_SEATS = 8;
 const MAX_LINKS = 3;
 /** Head "back" button: only shown on touch devices and in the compact (phone) layout — see styles.js. */
 const BACK_BTN = '<i class="tr-backbtn" role="button" aria-label="Back">◀</i>';
+/** Everything but multiplayer runs from the service-worker cache; multiplayer needs the relay server. */
+const MP_SUB = 'Host or join a room · up to 8';
+const MP_OFFLINE_SUB = 'Offline · needs a network connection';
+const MP_OFFLINE_MSG = "You're offline. Multiplayer needs a network connection; Single Race, Championship and Time Trial work offline.";
+/** navigator.onLine is false only with no network at all — a LAN without internet still counts as online. */
+const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
 
 /** Room codes are 4 letters. Accepts a pasted join link too (…?join=ABCD). */
 export function cleanCode(v) {
@@ -155,6 +161,29 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
     };
   }
 
+  // ================================================================ offline
+  // The Multiplayer entry says when there is no network; its screen refuses to host / join.
+  /** @type {ReturnType<typeof button> | null} */
+  let mpBtn = null;
+  function renderMpBtn() {
+    if (!mpBtn) return;
+    const off = isOffline();
+    mpBtn.el.classList.toggle('tr-off', off);
+    const sub = mpBtn.el.querySelector('.tr-btn-s');
+    if (sub) sub.textContent = off ? MP_OFFLINE_SUB : MP_SUB;
+  }
+  if (MULTIPLAYER && typeof window !== 'undefined') {
+    const onNet = () => {
+      renderMpBtn();
+      const scr = screens.mp;
+      if (!scr || !scr.setMsg || mp.busy) return;
+      if (isOffline()) scr.setMsg(MP_OFFLINE_MSG, true);
+      else if (mp.msg === MP_OFFLINE_MSG) scr.setMsg('');
+    };
+    window.addEventListener('online', onNet);
+    window.addEventListener('offline', onNet);
+  }
+
   // ================================================================ main
   {
     const s = addScreen('main', 'tr-main tr-left',
@@ -170,7 +199,7 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
     };
     s.items = [
       button('Single Race', 'Pick a track, beat the pack', pick('race')),
-      MULTIPLAYER && button('Multiplayer', 'Host or join a room · up to 8', () => { mp.msg = ''; go('mp', { index: 1 }); }),
+      MULTIPLAYER && (mpBtn = button('Multiplayer', MP_SUB, () => { mp.msg = ''; go('mp', { index: 1 }); })),
       button('Championship', tracks.length + ' tracks · points 10-8-6-5-4-3-2-1', pick('championship')),
       button('Time Trial', 'Just you and the clock', pick('timetrial')),
       button('Options', 'Sound, graphics, driver', () => { returnTo = 'main'; go('options', { index: 0 }); }),
@@ -179,7 +208,10 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
     s.items = s.items.filter(Boolean);
     s.items.forEach((it) => list.appendChild(it.el));
     s.index = Math.min(s.items.length - 1, Math.max(0, sel.mainIndex | 0));
-    s.onShow = () => { hello.innerHTML = 'Driver: <b>' + esc(settings.playerName) + '</b>'; };
+    s.onShow = () => {
+      hello.innerHTML = 'Driver: <b>' + esc(settings.playerName) + '</b>';
+      renderMpBtn();
+    };
     s.back = () => {
       sel.mainIndex = nav.index;
       store.saveSel();
@@ -570,12 +602,20 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
       mp.msgErr = !!err;
       renderMsg();
     }
+    /** True (and says so) when there is no network to host or join on. */
+    function blockOffline() {
+      if (!isOffline()) return false;
+      setMsg(MP_OFFLINE_MSG, true);
+      return true;
+    }
     function toCar(purpose) {
+      if (blockOffline()) return;
       setMsg('');
       mp.purpose = purpose;
       go('car', { index: 0 });
     }
     function submitJoin() {
+      if (blockOffline()) return;
       mp.code = cleanCode(codeItem.input.value);
       if (mp.code.length !== 4) {
         setMsg(mp.code ? 'Room codes have 4 letters — ' + (4 - mp.code.length) + ' more to go.' : 'Type the 4-letter room code from the host first.', true);
@@ -634,6 +674,11 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
       mp.purpose = null;
       mp.lastJoin = !host;
       const fn = host ? h.onMpHost : h.onMpJoin;
+      if (isOffline()) {
+        go('mp', { index: host ? 1 : JOIN_I });
+        setMsg(MP_OFFLINE_MSG, true);
+        return;
+      }
       if (!fn) {
         setMsg('Multiplayer is not available here.', true);
         go('mp', { index: host ? 1 : JOIN_I });
@@ -656,6 +701,10 @@ export function createMenu(root, { tracks, cars, items, handlers, store }) {
       r('busyt').textContent = mp.busyText;
       nameItem.render();
       codeItem.render();
+      if (!mp.busy && isOffline()) {
+        mp.msg = MP_OFFLINE_MSG;
+        mp.msgErr = true;
+      } else if (mp.msg === MP_OFFLINE_MSG) mp.msg = '';
       renderMsg();
     };
     s.key = (e) => {
