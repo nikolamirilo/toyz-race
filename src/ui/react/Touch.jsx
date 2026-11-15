@@ -5,7 +5,27 @@ import { memo } from 'react';
 
 const Arrow = ({ flip }) => (
   <svg viewBox="0 0 40 40" aria-hidden="true" style={flip ? { transform: 'scaleX(-1)' } : undefined}>
-    <path d="M27 5 L9 20 L27 35 Z" fill="currentColor" stroke="#0b0f22" strokeWidth="3.5" strokeLinejoin="round" paintOrder="stroke" />
+    <path d="M25 7 L11 20 L25 33" fill="none" stroke="currentColor" strokeWidth="6.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+// gas: stacked chevrons pointing up the pedal; brake: the dashboard brake symbol; drift: a tyre leaving skid marks
+const GasIcon = () => (
+  <svg viewBox="0 0 40 40" aria-hidden="true">
+    <path d="M8 22 L20 10 L32 22 M8 33 L20 21 L32 33" fill="none" stroke="currentColor" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const BrakeIcon = () => (
+  <svg viewBox="0 0 40 40" aria-hidden="true">
+    <circle cx="20" cy="20" r="10.5" fill="none" stroke="currentColor" strokeWidth="4" />
+    <path d="M20 14 V21" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+    <circle cx="20" cy="26" r="2.2" fill="currentColor" />
+    <path d="M6.5 9 A18 18 0 0 0 6.5 31 M33.5 9 A18 18 0 0 1 33.5 31" fill="none" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round" />
+  </svg>
+);
+const DriftIcon = () => (
+  <svg viewBox="0 0 40 40" aria-hidden="true">
+    <rect x="21" y="5" width="11" height="18" rx="4" fill="currentColor" transform="rotate(28 26.5 14)" />
+    <path d="M6 20 C9 30 16 35 26 35 M4 28 C8 35 14 38 20 38" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" />
   </svg>
 );
 const PauseIcon = () => (
@@ -34,10 +54,10 @@ export const Touch = memo(function Touch({ nodeRef }) {
       </div>
       <div className="tr-tc-btn tr-tc-l" data-tc="left" role="button" aria-label="Steer left"><Arrow /></div>
       <div className="tr-tc-btn tr-tc-r" data-tc="right" role="button" aria-label="Steer right"><Arrow flip /></div>
-      <div className="tr-tc-btn tr-tc-drift" data-tc="drift" role="button" aria-label="Handbrake"><b>Drift</b></div>
+      <div className="tr-tc-btn tr-tc-drift" data-tc="drift" role="button" aria-label="Handbrake"><DriftIcon /><b>Drift</b></div>
       <div className="tr-tc-btn tr-tc-item empty" data-tc="fire" role="button" aria-label="Use item"><i /><small>Item</small></div>
-      <div className="tr-tc-btn tr-tc-brake" data-tc="brake" role="button" aria-label="Brake / reverse"><b>Brake</b><small>Reverse</small></div>
-      <div className="tr-tc-btn tr-tc-gas" data-tc="gas" role="button" aria-label="Accelerate"><b>Gas</b></div>
+      <div className="tr-tc-btn tr-tc-brake" data-tc="brake" role="button" aria-label="Brake / reverse"><BrakeIcon /><b>Brake</b></div>
+      <div className="tr-tc-btn tr-tc-gas" data-tc="gas" role="button" aria-label="Accelerate"><GasIcon /><b>Gas</b></div>
     </div>
   );
 });

@@ -401,30 +401,53 @@ html.tr-rotated .tr-root{--sal:env(safe-area-inset-top,0px); --sat:env(safe-area
 .tr-tc-sm{display:grid; place-items:center; width:var(--tb); height:var(--tb); border-radius:.75em; background:rgba(11,15,34,.72); border:.14em solid var(--ink); color:var(--cream); pointer-events:auto; cursor:pointer; touch-action:none}
 .tr-tc-sm svg{width:52%; height:52%; display:block; pointer-events:none}
 .tr-tc-sm:active{background:var(--yellow); color:var(--ink)}
-.tr-tc-btn{position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.15em; pointer-events:auto; touch-action:none; cursor:pointer; color:var(--cream); background:rgba(11,15,34,.46); border:.18em solid rgba(255,246,224,.62); border-radius:1.5em; box-shadow:0 .28em 0 rgba(11,15,34,.5); transition:transform .06s,background .06s}
+.tr-tc-btn{position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.3em; pointer-events:auto; touch-action:none; cursor:pointer; color:var(--cream);
+  background:linear-gradient(180deg,rgba(40,48,92,.5),rgba(11,15,34,.58)); border:.13em solid rgba(255,246,224,.5); border-radius:2em;
+  box-shadow:inset 0 .12em 0 rgba(255,255,255,.22), 0 .3em .7em rgba(0,0,0,.35); transition:transform .07s ease-out,background .07s,box-shadow .07s,border-color .07s}
 .tr-tc-btn > *{pointer-events:none}
-.tr-tc-btn b{font-size:1.3em; line-height:1; letter-spacing:.06em; text-transform:uppercase; -webkit-text-stroke:.16em var(--ink); paint-order:stroke fill}
-.tr-tc-btn small{font-family:var(--body); font-style:normal; font-weight:800; font-size:.66em; line-height:1; letter-spacing:.12em; text-transform:uppercase; opacity:.85}
-.tr-tc-btn svg{width:44%; height:44%; display:block; overflow:visible}
-.tr-tc-btn.on{background:rgba(255,208,46,.92); border-color:var(--ink); color:var(--ink); transform:translateY(.16em) scale(.97); box-shadow:0 .08em 0 var(--ink)}
-.tr-tc-btn.on b{-webkit-text-stroke:0}
-.tr-tc-l{left:calc(1em + var(--sal)); bottom:calc(1em + var(--sab)); width:8.6em; height:8.6em}
-.tr-tc-r{left:calc(10.3em + var(--sal)); bottom:calc(1em + var(--sab)); width:8.6em; height:8.6em}
-.tr-tc-gas{right:calc(1em + var(--sar)); bottom:calc(1em + var(--sab)); width:8.6em; height:9.6em; background:rgba(58,160,70,.5)}
-.tr-tc-brake{right:calc(10.3em + var(--sar)); bottom:calc(1em + var(--sab)); width:7.2em; height:7.2em; background:rgba(214,40,90,.46)}
-.tr-tc-drift{right:calc(10.9em + var(--sar)); bottom:calc(9.1em + var(--sab)); width:6em; height:6em; border-radius:50%}
-.tr-tc-drift b{font-size:.95em}
-.tr-tc-item{right:calc(2em + var(--sar)); bottom:calc(11.5em + var(--sab)); width:6.6em; height:6.6em; border-radius:50%; background:rgba(255,208,46,.9); border-color:var(--ink); color:var(--ink)}
+.tr-tc-btn b{font-size:.92em; line-height:1; letter-spacing:.14em; text-transform:uppercase; text-shadow:0 .08em .12em rgba(0,0,0,.6)}
+.tr-tc-btn small{font-family:var(--body); font-style:normal; font-weight:800; font-size:.6em; line-height:1; letter-spacing:.12em; text-transform:uppercase; opacity:.8}
+.tr-tc-btn svg{width:2.9em; height:2.9em; display:block; overflow:visible; filter:drop-shadow(0 .1em .1em rgba(0,0,0,.45))}
+.tr-tc-btn.on{transform:scale(.95); border-color:#fff; box-shadow:inset 0 .12em 0 rgba(255,255,255,.4), 0 0 1.3em var(--glow,rgba(255,246,224,.55))}
+/* steering: two big squircles under the left thumb */
+.tr-tc-l,.tr-tc-r{bottom:calc(1em + var(--sab)); width:8.6em; height:8.6em; --glow:rgba(255,208,46,.75)}
+.tr-tc-l{left:calc(1em + var(--sal))}
+.tr-tc-r{left:calc(10.2em + var(--sal))}
+.tr-tc-l svg,.tr-tc-r svg{width:3.9em; height:3.9em}
+.tr-tc-l.on,.tr-tc-r.on{background:linear-gradient(180deg,rgba(255,224,110,.95),rgba(255,176,30,.95)); color:var(--ink)}
+/* pedals: the gas is the biggest target and sits where the right thumb rests, the brake is one thumb-roll to its left.
+   Both are hinged at the bottom like real pedals: pressing tips them away. */
+.tr-tc-gas,.tr-tc-brake{justify-content:flex-end; padding-bottom:.9em; overflow:hidden; transform-origin:50% 100%; transform:perspective(26em) rotateX(7deg)}
+.tr-tc-gas::before,.tr-tc-brake::before{content:""; position:absolute; inset:.55em .55em 3.6em; border-radius:1.3em 1.3em .5em .5em; pointer-events:none;
+  background:repeating-linear-gradient(180deg,rgba(255,255,255,.2) 0 .28em,rgba(0,0,0,.14) .28em .9em)}
+.tr-tc-gas{right:calc(1em + var(--sar)); bottom:calc(1em + var(--sab)); width:8.2em; height:11.6em; border-radius:1.8em 1.8em 1.4em 1.4em; --glow:rgba(92,240,120,.85);
+  background:linear-gradient(180deg,rgba(104,224,124,.6),rgba(26,132,58,.66)); border-color:rgba(196,255,206,.75)}
+.tr-tc-brake{right:calc(10em + var(--sar)); bottom:calc(1em + var(--sab)); width:7.6em; height:8em; border-radius:1.6em 1.6em 1.3em 1.3em; --glow:rgba(255,92,120,.85);
+  background:linear-gradient(180deg,rgba(255,110,130,.58),rgba(170,24,60,.66)); border-color:rgba(255,200,208,.75)}
+.tr-tc-gas.on,.tr-tc-brake.on{transform:perspective(26em) rotateX(24deg) scale(.97)}
+.tr-tc-gas.on{background:linear-gradient(180deg,rgba(140,255,160,.92),rgba(40,180,80,.92))}
+.tr-tc-brake.on{background:linear-gradient(180deg,rgba(255,150,165,.92),rgba(220,40,80,.92))}
+.tr-tc-gas svg,.tr-tc-brake svg{position:absolute; top:1.5em; width:3em; height:3em}
+.tr-tc-brake svg{top:1.1em; width:2.5em; height:2.5em}
+/* drift: round, on the thumb arc above the pedals */
+.tr-tc-drift{right:calc(10.7em + var(--sar)); bottom:calc(10.1em + var(--sab)); width:6.2em; height:6.2em; border-radius:50%; gap:.1em; --glow:rgba(255,160,40,.9); border-color:rgba(255,196,90,.85);
+  background:radial-gradient(circle at 50% 35%,rgba(255,170,50,.42),rgba(11,15,34,.6) 72%)}
+.tr-tc-drift svg{width:2.7em; height:2.7em}
+.tr-tc-drift b{font-size:.68em}
+.tr-tc-drift.on{background:radial-gradient(circle at 50% 35%,rgba(255,214,120,.98),rgba(255,140,20,.95) 75%); color:var(--ink)}
+.tr-tc-item{right:calc(2em + var(--sar)); bottom:calc(13.6em + var(--sab)); width:6.4em; height:6.4em; border-radius:50%; gap:.05em; background:radial-gradient(circle at 50% 35%,rgba(255,232,130,.96),rgba(255,190,30,.94)); border-color:var(--ink); color:var(--ink); --glow:rgba(255,208,46,.9)}
 .tr-tc-item i{font-style:normal; font-size:2.5em; line-height:1.1}
 .tr-tc-item small{font-size:.6em}
 .tr-tc-item.empty{background:rgba(11,15,34,.3); border-color:rgba(255,246,224,.28); color:rgba(255,246,224,.5); box-shadow:none}
 .tr-tc-item.empty i{display:none}
 .tr-tc-item.empty small{font-size:.8em}
+/* karting: no pickups, so no item button */
+.tr-tc.kart .tr-tc-item{display:none}
+/* auto accelerate: no gas pedal, the brake takes its place */
 .tr-tc.auto .tr-tc-gas{display:none}
-.tr-tc.auto .tr-tc-brake{right:calc(1em + var(--sar)); width:8.6em; height:8.6em}
-.tr-tc.auto .tr-tc-drift{right:calc(10.3em + var(--sar)); bottom:calc(1em + var(--sab)); width:7.2em; height:7.2em; border-radius:1.5em}
-.tr-tc.auto .tr-tc-drift b{font-size:1.15em}
-.tr-tc.auto .tr-tc-item{bottom:calc(10.5em + var(--sab))}
+.tr-tc.auto .tr-tc-brake{right:calc(1em + var(--sar)); width:8.2em; height:9.6em}
+.tr-tc.auto .tr-tc-drift{right:calc(10em + var(--sar)); bottom:calc(1.6em + var(--sab)); width:7em; height:7em}
+.tr-tc.auto .tr-tc-item{bottom:calc(11.6em + var(--sab))}
 
 /* ================================================================== touch-first devices */
 html:not(.tr-touch) .tr-root .tr-if-touch{display:none !important}

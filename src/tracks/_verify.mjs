@@ -1,14 +1,16 @@
 // node src/tracks/_verify.mjs — structural checks for every track (no browser needed).
 import * as THREE from 'three';
-import { TRACKS, buildTrack } from './index.js';
+import { TRACKS, KART_TRACKS, buildTrack } from './index.js';
 
 let failures = 0;
 const fail = (id, msg) => { failures++; console.log(`  FAIL [${id}] ${msg}`); };
 const ok = (c, id, msg) => { if (!c) fail(id, msg); };
 const wrapT = (d) => { d = Math.abs(d) % 1; return Math.min(d, 1 - d); };
 
-ok(TRACKS.length === 4, 'index', 'TRACKS must have 4 entries');
-for (const meta of TRACKS) {
+ok(TRACKS.length === 6, 'index', 'TRACKS must have 6 entries');
+ok(KART_TRACKS.length === 3, 'index', 'KART_TRACKS must have 3 entries');
+for (const meta of TRACKS.concat(KART_TRACKS)) {
+  const kart = meta.kart; // kart circuits: short, narrow, twisty
   for (const k of ['id', 'name', 'description', 'difficulty', 'defaultLaps', 'lengthLabel']) ok(meta[k] !== undefined, meta.id, 'meta.' + k);
   const t0 = performance.now();
   const tr = buildTrack(meta.id);
@@ -30,7 +32,7 @@ for (const meta of TRACKS) {
   const gap = S[0].pos.distanceTo(tr.sample(0.99999).pos);
   ok(gap < 0.05, id, 'curve not closed: ' + gap);
   ok(Math.abs(tr.sample(1).pos.distanceTo(S[0].pos)) < 1e-6, id, 'sample(1) != sample(0)');
-  ok(L >= 450 && L <= 900, id, 'length ' + L.toFixed(1));
+  ok(L >= (kart ? 350 : 450) && L <= 900, id, 'length ' + L.toFixed(1));
   let acc = 0;
   for (let i = 0; i < K; i++) { const a = S[i].pos, b = S[(i + 1) % K].pos; acc += Math.hypot(a.x - b.x, a.z - b.z); }
   ok(Math.abs(acc - L) < L * 0.005, id, `length mismatch ${acc.toFixed(1)} vs ${L.toFixed(1)}`);
@@ -52,7 +54,7 @@ for (const meta of TRACKS) {
     const ds = Math.hypot(n.pos.x - p.pos.x, n.pos.z - p.pos.z);
     if (Math.abs(dh) > 1e-6) minR = Math.min(minR, ds / Math.abs(dh));
     maxY = Math.max(maxY, s.pos.y); minY = Math.min(minY, s.pos.y);
-    ok(s.halfWidth >= 6 && s.halfWidth <= 9.001, id, 'halfWidth out of 6..9: ' + s.halfWidth);
+    ok(kart ? s.halfWidth >= 2 && s.halfWidth <= 3 : s.halfWidth >= 6 && s.halfWidth <= 9.001, id, 'halfWidth out of range: ' + s.halfWidth);
   }
   const slopeDeg = (maxSlope * 180) / Math.PI;
   ok(slopeDeg < 25, id, 'slope ' + slopeDeg.toFixed(1));
@@ -150,14 +152,14 @@ for (const meta of TRACKS) {
   }
 
   // --- pickups, boost pads, obstacles
-  ok(tr.pickupSpots.length >= 12 && tr.pickupSpots.length <= 24, id, 'pickup count ' + tr.pickupSpots.length);
+  ok(kart ? tr.pickupSpots.length === 0 : tr.pickupSpots.length >= 12 && tr.pickupSpots.length <= 24, id, 'pickup count ' + tr.pickupSpots.length);
   for (const s of tr.pickupSpots) {
     const p = tr.project(s);
     ok(Math.abs(p.lateral) < p.halfWidth - 1.5, id, 'pickup off road');
     ok(Math.abs(s.y - p.y) < 0.02, id, 'pickup y');
     for (const g of tr.startGrid) ok(g.pos.distanceTo(s) > 8, id, 'pickup on grid');
   }
-  ok(tr.boostPads.length >= 2 && tr.boostPads.length <= 4, id, 'boost pad count');
+  ok(kart ? tr.boostPads.length === 0 : tr.boostPads.length >= 2 && tr.boostPads.length <= 4, id, 'boost pad count');
   for (const b of tr.boostPads) {
     const p = tr.project(b);
     ok(Math.abs(p.lateral) + b.radius < p.halfWidth, id, 'boost pad off road');

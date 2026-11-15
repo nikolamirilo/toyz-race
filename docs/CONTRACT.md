@@ -30,7 +30,7 @@ from any existing commercial game.
 `src/tracks/index.js` exports:
 
 ```js
-export const TRACKS; // [{ id, name, description, difficulty: 1..4, defaultLaps, lengthLabel }]  — 4 tracks
+export const TRACKS; // [{ id, name, description, difficulty: 1..4, defaultLaps, lengthLabel }]  — 6 tracks (plus KART_TRACKS, same shape, for karting mode)
 export function buildTrack(id); // -> Track
 ```
 
@@ -238,12 +238,14 @@ keyboard input, attract mode, championship flow, wiring events to UI + audio.
 `config.mode === 'karting'` (main menu -> Karting -> track select; there is no car select). A race like Single Race, but
 about driving the line rather than fighting the pack:
 
-- **Narrow layout**: `buildTrack(id, { widthScale: 0.55, bare: true })` — same centreline and scenery, road at 55% width,
-  no boost pads, obstacles or pickup crates (`KART_LAYOUT` in `src/main.js`). The track select flies over this layout.
+- **Kart circuits**: karting has its own tracks, `KART_TRACKS` (`src/tracks/karting.js`, built with the same
+  `buildTrack(id)`): short, flat, twisty ribbons of hairpins and esses, road half-width 2.3 (a normal track is 6.5-9),
+  tyre walls at the kerb, no boost pads, obstacles or pickup crates. The track select lists them instead of `TRACKS`
+  and remembers its own pick (`sel.kartTrackId`).
 - **One make**: everybody drives `KART` (`src/cars/defs.js`, not listed in `CARS`), told apart by paint:
   `new Race({ ..., playerCarId: KART.id, oneMake: KART.id, items: false })`.
 - **The gas matters**: `KART.powerUndersteer` takes steering authority away at speed while the throttle is down
   (`powerSteerFactor()` in `src/cars/car.js`, the AI plans its corner speed with it), so a flat-out kart runs wide; easing
   off turns it in. `KART.wallScrub` makes a wall hit cost real speed.
 - **Touch**: `ui.setManualGas(true)` — the auto accelerate option is ignored, the GAS pedal is always the player's.
-- **Records** are stored apart from the normal layout, under `<trackId>@kart`.
+- **Records** are stored per circuit id like any other track.

@@ -4,7 +4,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { fmtTime, isTouch } from '../util.js';
 import { MULTIPLAYER, APP_VERSION } from '../../flags.js';
-import { DIFFICULTIES, MODE_LABEL, MAX_SEATS, MAX_LINKS, range, isOffline, recordKey } from './menuModel.js';
+import { DIFFICULTIES, MODE_LABEL, MAX_SEATS, MAX_LINKS, range, isOffline } from './menuModel.js';
 import { Item, Hints, Logo, CarSvg, Stars, BackBtn } from './items.jsx';
 
 const CLASS_CHIP = { Rookie: '', Amateur: 'y', Pro: 'p' };
@@ -51,7 +51,7 @@ function Main({ m, kit }) {
     kit.button('race', 'Single Race', 'Pick a track, beat the pack', () => m.pickMode('race')),
     // Multiplayer needs the relay server: while offline it stays visible but cannot be selected.
     MULTIPLAYER && kit.button('mp', 'Multiplayer', offline ? 'Offline · needs a network connection' : 'Host or join a room · up to 8', m.openMp, null, { off: offline, skip: isOffline }),
-    kit.button('kart', 'Karting', 'Narrow tracks · you work the gas · nail the apex', () => m.pickMode('karting')),
+    kit.button('kart', 'Karting', 'Tight kart circuits · you work the gas', () => m.pickMode('karting')),
     kit.button('champ', 'Championship', m.tracks.length + ' tracks · points 10-8-6-5-4-3-2-1', () => m.pickMode('championship')),
     kit.button('tt', 'Time Trial', 'Just you and the clock', () => m.pickMode('timetrial')),
     kit.button('options', 'Options', 'Sound, graphics, driver', () => m.openOptions('main')),
@@ -163,7 +163,8 @@ function CarSelect({ m, kit }) {
 
 // ================================================================ track select
 function TrackSelect({ m, kit }) {
-  const { tracks, sel, records } = m;
+  const { sel, records } = m;
+  const tracks = m.trackList();
   const COLS = 2;
   const ti = m.trackIndex();
   const t = tracks[ti];
@@ -189,16 +190,15 @@ function TrackSelect({ m, kit }) {
   const items = [grid, ...rows, go];
   useItems(m, items);
   const gb = m.nav.bind(grid, 0);
-  const rk = t ? recordKey(t.id, sel.mode) : null;
-  const bl = t ? records.getBestLap(rk) : null;
-  const br = t ? records.getBestRace(rk, laps) : null;
+  const bl = t ? records.getBestLap(t.id) : null;
+  const br = t ? records.getBestRace(t.id, laps) : null;
 
   return (
     <Screen name="tracksel" cls="tr-left">
       <div className="tr-side">
         <div className="tr-head">
           <BackBtn onBack={m.back} />
-          <h2>Choose a track</h2>
+          <h2>{kart ? 'Choose a circuit' : 'Choose a track'}</h2>
           <span className="tr-chip o">{MODE_LABEL[tt ? 'timetrial' : kart ? 'karting' : 'race']}</span>
         </div>
         <div className={cx('tr-trkgrid', gb.focused && 'tr-focus')} onMouseEnter={gb.onMouseEnter} onClick={gb.onClick}>
@@ -220,7 +220,7 @@ function TrackSelect({ m, kit }) {
         {t ? (
           <div className="tr-card tr-trkdetail">
             <div className="tr-td-desc">{t.description || ''}</div>
-            {kart ? <div className="tr-td-kart"><b>Karting</b> Narrow road, equal go-karts, no pickups. Flat out the kart runs wide: ease off the gas to turn in and clip the apex.</div> : null}
+            {kart ? <div className="tr-td-kart"><b>Karting</b> Equal go-karts, no pickups, a road barely two karts wide. Flat out the kart runs wide: ease off the gas to turn in and clip the apex.</div> : null}
             <div className="tr-td-meta">
               <div className="tr-meta"><small>Difficulty</small><b><Stars n={t.difficulty} /></b></div>
               <div className="tr-meta"><small>Length</small><b>{t.lengthLabel || '—'}</b></div>
