@@ -49,7 +49,8 @@ export class RaceCore {
   /**
    * @param {object} opts { scene, track, playerCarId, playerName, laps, opponents, difficulty, mode }
    *   extras: random (rng fn), autopilot (bool: AI drives the player car from the start — attract mode),
-   *           playerGridSlot (number, default last occupied slot; 0 in time trial)
+   *           playerGridSlot (number, default last occupied slot; 0 in time trial),
+   *           oneMake (car id every car uses, single player only), items (false: no pickup crates)
    *   multiplayer (CONTRACT-NET.md): net: { role: 'host', localId, remotes: [{ id, name, carId }] }
    *                                  net: { role: 'client', localId, roster }   (roster = host's getRoster())
    * @param {object} deps { Car, AIDriver, CARS, resolveCarCollisions }
@@ -118,7 +119,9 @@ export class RaceCore {
       this._net = new ClientNet(this, netCfg);
       this._buildFromRoster(netCfg, defs, grid);
     } else {
-    const pid = defs.some((c) => c.id === playerCarId) ? playerCarId : defs[0].id;
+    // one-make race (karting): everybody drives `opts.oneMake`, told apart by paint
+    const oneMake = !this.netRole && opts.oneMake ? opts.oneMake : null;
+    const pid = oneMake || (defs.some((c) => c.id === playerCarId) ? playerCarId : defs[0].id);
     const playerSlot = Math.min(total - 1, Math.max(0, opts.playerGridSlot != null ? opts.playerGridSlot | 0 : total - 1));
     const player = new Car(pid, { name: playerName, isPlayer: true });
     this.player = player;
@@ -155,8 +158,11 @@ export class RaceCore {
     if (!pool.length) pool = [pid];
     const names = shuffle(DRIVER_NAMES.slice(), rnd);
     const base = SKILL_BY_DIFFICULTY[this.difficulty];
+    const paints = oneMake ? ALT_COLORS.filter((c) => c !== String(player.color || '').toLowerCase() && c !== '#3c8dff') : null;
     for (let i = 0; i < nBots; i++) {
-      const car = new Car(pool[i % pool.length], { name: names[i % names.length], isPlayer: false });
+      const car = oneMake
+        ? new Car(oneMake, { name: names[i % names.length], isPlayer: false, color: paints[i % paints.length] })
+        : new Car(pool[i % pool.length], { name: names[i % names.length], isPlayer: false });
       // small spread; cars nearer the front of the grid are a touch better
       const skill = Math.min(1, Math.max(0.05, base + 0.07 - (0.14 * i) / Math.max(1, nBots - 1) + (rnd() - 0.5) * 0.06));
       const ai = new AIDriver(car, { skill });
@@ -203,7 +209,7 @@ export class RaceCore {
     // --- pickups + weapons
     this.weapons = new Weapons(this);
     this.pickups =
-      this.mode !== 'timetrial' && track.pickupSpots && track.pickupSpots.length
+      this.mode !== 'timetrial' && opts.items !== false && track.pickupSpots && track.pickupSpots.length
         ? new PickupField(this, track.pickupSpots)
         : null;
   }

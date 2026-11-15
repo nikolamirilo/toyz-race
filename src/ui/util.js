@@ -105,6 +105,8 @@ export function wheelSvg() {
 export function logoHtml() {
   return (
     '<div class="tr-logo" role="img" aria-label="Toyz Race">' +
+    // the blue rally car sliding out from behind the wordmark (public/logo-car.png, see scripts/generate-icons.mjs)
+    '<img class="tr-logo-car" src="logo-car.png" alt="" draggable="false">' +
     '<div class="tr-logo-toyz"><span>T</span><span class="tr-logo-o">' + wheelSvg() + '</span><span>Y</span><span>Z</span></div>' +
     '<div class="tr-logo-race"><span>R</span><span>A</span><span>C</span><span>E</span></div>' +
     '<div class="tr-logo-strip"></div>' +

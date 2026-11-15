@@ -32,7 +32,7 @@ html.tr-rotated .tr-root{--sal:env(safe-area-inset-top,0px); --sat:env(safe-area
 .tr-disp{font-family:var(--display); font-weight:900; font-style:italic; text-transform:uppercase; letter-spacing:.02em}
 
 /* ------------------------------------------------------------------ logo */
-.tr-logo{display:inline-flex; flex-direction:column; align-items:flex-start; font-family:var(--display); font-weight:900; font-style:italic; line-height:.9; filter:drop-shadow(0 .06em .08em rgba(0,0,0,.45))}
+.tr-logo{position:relative; display:inline-flex; flex-direction:column; align-items:flex-start; font-family:var(--display); font-weight:900; font-style:italic; line-height:.9; filter:drop-shadow(0 .06em .08em rgba(0,0,0,.45))}
 .tr-logo-toyz{display:inline-flex; gap:.04em; background:var(--yellow); color:var(--ink); font-size:.36em; letter-spacing:.14em; padding:.2em .5em .16em .6em; border:.14em solid var(--ink); border-radius:.3em; transform:rotate(-5deg) translate(.5em,.34em); box-shadow:.14em .16em 0 var(--ink); position:relative; z-index:2}
 .tr-logo-toyz::before{content:""; position:absolute; left:.22em; top:50%; width:.2em; height:.2em; margin-top:-.1em; border-radius:50%; background:var(--ink); opacity:.85}
 .tr-logo-toyz span:first-child{margin-left:.3em}
@@ -43,6 +43,8 @@ html.tr-rotated .tr-root{--sal:env(safe-area-inset-top,0px); --sat:env(safe-area
 .tr-logo-race span:nth-child(2){transform:rotate(3deg) translateY(.02em)}
 .tr-logo-race span:nth-child(3){transform:rotate(-2deg) translateY(-.02em); color:var(--yellow)}
 .tr-logo-race span:nth-child(4){transform:rotate(2deg) translateY(.015em)}
+.tr-logo-car{position:absolute; left:2.02em; top:-1.0em; width:2.5em; height:auto; z-index:3; pointer-events:none; transform-origin:30% 70%; animation:tr-logo-car 3.2s ease-in-out infinite}
+@keyframes tr-logo-car{0%,100%{transform:rotate(0deg) translate(0,0)}50%{transform:rotate(-2.5deg) translate(-.03em,-.035em)}}
 .tr-logo-o{width:.84em; height:.84em; margin:0 .05em 0 .03em; align-self:center; transform:translateY(.015em); filter:drop-shadow(.055em .07em 0 var(--ink))}
 .tr-logo-o svg{width:100%; height:100%; display:block; animation:tr-spin 5s linear infinite}
 .tr-logo-strip{align-self:stretch; height:.11em; margin:.1em .1em 0 .15em; border-radius:.03em; border:.03em solid var(--ink); transform:skewX(-14deg);
@@ -171,6 +173,8 @@ html.tr-rotated .tr-root{--sal:env(safe-area-inset-top,0px); --sat:env(safe-area
 .tr-stars i.on{color:var(--orange); text-shadow:0 0 .02em var(--ink)}
 .tr-trkdetail{display:flex; flex-direction:column; gap:.45em}
 .tr-td-desc{font-size:.95em; color:var(--cream); opacity:.9; min-height:2.5em; line-height:1.3}
+.tr-td-kart{font-size:.82em; line-height:1.3; color:var(--cream); margin-top:.5em; padding:.45em .7em; border-left:.25em solid var(--yellow); background:rgba(255,208,46,.1); border-radius:.3em}
+.tr-td-kart b{color:var(--yellow); text-transform:uppercase; letter-spacing:.06em; margin-right:.5em}
 .tr-td-meta{display:flex; gap:1.6em; align-items:flex-end}
 .tr-meta{display:flex; flex-direction:column; gap:.1em}
 .tr-meta small{font-family:var(--display); font-weight:900; font-style:italic; text-transform:uppercase; font-size:.68em; letter-spacing:.1em; color:var(--muted)}
@@ -512,6 +516,7 @@ html.tr-touch .tr-h-speed.boost .tr-h-boost{visibility:visible}
   .tr-trktile{padding:.3em .7em}
   .tr-trkdetail{gap:.3em}
   .tr-td-desc{font-size:.85em; min-height:0; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+  .tr-td-kart{font-size:.72em; line-height:1.2; margin-top:0; padding:.3em .6em}
   .tr-td-meta{gap:1.2em}
   .tr-meta b{font-size:1em}
 
