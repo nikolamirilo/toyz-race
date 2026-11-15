@@ -21,13 +21,16 @@ function roundRect(g, x, y, w, h, r) {
   g.closePath();
 }
 
-/** Road: u across (canvas x), v along (canvas y). styles: paving | mat | neon | planks | asphalt | ice */
+/** Road: u across (canvas x), v along (canvas y). styles: paving | mat | neon | planks | ice | toyOrange | toyBlue | toyGlow */
 export const drawRoad = (style) => (g, w, h) => {
   const S = {
     paving: { base: '#8d8983', sp: ['#7c7872', '#9d9992', '#a8a39b', '#6f6b66'], edge: '#f6f1e4', dash: '#ffd84a' },
     mat: { base: '#3a3e4b', sp: ['#333743', '#444958', '#2d303b'], edge: '#ffd23c', dash: '#f4f4f4' },
     neon: { base: '#0f1228', sp: ['#141837', '#0b0d1e', '#1a1f45'], edge: '#27f0ff', dash: '#ff3fd0' },
-    asphalt: { base: '#4a4d55', sp: ['#43464e', '#53565f', '#3c3f46'], edge: '#f4f4f4', dash: '#4a4d55' },
+    // snap-together plastic track pieces of the toy kart sets (seams + connector tabs are drawn below)
+    toyOrange: { base: '#ff7a1c', sp: ['#ff8630', '#f56f12', '#ff9340'], edge: '#ffd9a8', dash: '#ffe9c8' },
+    toyBlue: { base: '#2f6fed', sp: ['#3b7af2', '#2863d8', '#4a88f8'], edge: '#bcd4ff', dash: '#e3edff' },
+    toyGlow: { base: '#0f2a22', sp: ['#12332a', '#0c221c', '#16402f'], edge: '#7dff9a', dash: '#d8ff6a' },
     ice: { base: '#cfe3f2', sp: ['#bcd5ea', '#e2f0fa', '#a9c8e2', '#f2f8fd'], edge: '#3a7bd5', dash: '#3a7bd5' },
     planks: { base: '#b98a55', sp: ['#a97b49', '#c79a63'], edge: '#fbf6ea', dash: '#fbf6ea' },
   }[style];
@@ -75,8 +78,19 @@ export const drawRoad = (style) => (g, w, h) => {
     for (const x of [0.3, 0.36, 0.63, 0.7]) g.fillRect(x * w - 7, 0, 14, h);
     g.globalAlpha = 1;
   }
+  if (style.startsWith('toy')) {
+    // one moulded piece per half tile: a seam across the road and two puzzle-style connector tabs
+    for (const y of [0, h / 2]) {
+      g.fillStyle = 'rgba(0,0,0,0.38)'; g.fillRect(0, y - 3, w, 6);
+      g.fillStyle = 'rgba(255,255,255,0.3)'; g.fillRect(0, y + 3, w, 3);
+      for (const x of [0.27, 0.73]) {
+        g.fillStyle = 'rgba(0,0,0,0.38)'; g.beginPath(); g.arc(x * w, y + 20, 17, 0, 7); g.fill(); g.fillRect(x * w - 8, y, 16, 12);
+        g.fillStyle = S.base; g.beginPath(); g.arc(x * w, y + 20, 12, 0, 7); g.fill(); g.fillRect(x * w - 5, y - 2, 10, 14);
+      }
+    }
+  }
   // edge lines
-  const glow = style === 'neon';
+  const glow = style === 'neon' || style === 'toyGlow';
   if (glow) { g.shadowColor = S.edge; g.shadowBlur = 14; }
   g.fillStyle = S.edge;
   g.globalAlpha = style === 'planks' ? 0.85 : 1;

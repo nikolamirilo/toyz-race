@@ -239,9 +239,11 @@ keyboard input, attract mode, championship flow, wiring events to UI + audio.
 about driving the line rather than fighting the pack:
 
 - **Kart circuits**: karting has its own tracks, `KART_TRACKS` (`src/tracks/karting.js`, built with the same
-  `buildTrack(id)`): short, flat, twisty ribbons of hairpins and esses, road half-width 2.3 (a normal track is 6.5-9),
-  tyre walls at the kerb, no boost pads, obstacles or pickup crates. The track select lists them instead of `TRACKS`
-  and remembers its own pick (`sel.kartTrackId`).
+  `buildTrack(id)`), and they look nothing like the scenic ones: each is a toy kart track SET on a table top in a
+  giant room (play mat, homework desk, glow-in-the-dark at night) — snap-together plastic road pieces, a grandstand
+  of building blocks with peg-people, plastic trees, cones and tyre stacks. Short, flat, twisty (hairpins, esses),
+  road half-width 2.3 (a normal track is 6.5-9), no boost pads, obstacles or pickup crates. The track select lists
+  them instead of `TRACKS` and remembers its own pick (`sel.kartTrackId`).
 - **One make**: everybody drives `KART` (`src/cars/defs.js`, not listed in `CARS`), told apart by paint:
   `new Race({ ..., playerCarId: KART.id, oneMake: KART.id, items: false })`.
 - **The gas matters**: `KART.powerUndersteer` takes steering authority away at speed while the throttle is down
