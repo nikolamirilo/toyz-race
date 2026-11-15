@@ -34,6 +34,17 @@ export function maxYawRate(def, v, top = def.topSpeed) {
 export function maxLateralAccel(def) { return 60 * def.gripFactor; }
 /** braking deceleration (units/s^2) */
 export function brakeDecel(def) { return 36 + 8 * def.gripFactor; }
+/**
+ * Karts (def.powerUndersteer): share of the steering authority that is left at forward speed v with the given
+ * throttle. Flat out the front washes wide; easing off the gas brings the nose back in.
+ */
+export function powerSteerFactor(def, v, throttle) {
+  const k = def.powerUndersteer;
+  if (!k || !(throttle > 0) || !(v > 0)) return 1;
+  let x = (v / def.topSpeed - 0.35) / 0.45;
+  x = x < 0 ? 0 : x > 1 ? 1 : x;
+  return 1 - k * throttle * x;
+}
 
 export class Car {
   constructor(carId, opts = {}) {
@@ -171,6 +182,7 @@ export class Car {
     const sRate = (Math.abs(steerIn) > Math.abs(this.steerAngle) || steerIn * this.steerAngle < 0) ? 9 : 12;
     this.steerAngle += clamp(steerIn - this.steerAngle, -sRate * dt, sRate * dt);
     let yawTarget = this.steerAngle * maxYawRate(def, vf, def.topSpeed) * (vf >= 0 ? 1 : -1);
+    if (grounded) yawTarget *= powerSteerFactor(def, vf, throttle);
     if (handbrake && grounded) yawTarget *= 1.3;
     if (!grounded) yawTarget *= 0.3;
     else if (this.drifting && yawTarget * this.sideSpeed < 0) {
@@ -277,7 +289,7 @@ export class Car {
         const vn = this.vel.x * nx + this.vel.z * nz;
         if (vn > 0) {
           // remove outward velocity with a small bounce, keep most of the tangential speed
-          const keep = 1 - 0.1 * Math.min(1, vn / 8);
+          const keep = 1 - (0.1 + (def.wallScrub || 0)) * Math.min(1, vn / 8);
           let tx = this.vel.x - nx * vn, tz = this.vel.z - nz * vn;
           tx *= keep; tz *= keep;
           const bounce = vn * WALL_RESTITUTION + Math.min(vn, 1.0);

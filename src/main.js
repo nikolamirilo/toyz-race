@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { TRACKS, buildTrack } from './tracks/index.js';
-import { CARS, createCarMesh } from './cars/index.js';
+import { CARS, KART, createCarMesh } from './cars/index.js';
 import { ITEMS, Race } from './race/index.js';
 import { createUI } from './ui/index.js';
 import { createAudio } from './audio/index.js';
@@ -15,6 +15,9 @@ import { initPWA } from './pwa/register.js';
 
 const CHAMP_POINTS = [10, 8, 6, 5, 4, 3, 2, 1];
 const MAX_STEP = 1 / 60;
+// Karting: the same tracks as a narrow ribbon with nothing on it (no pads, crates or obstacles).
+const KART_LAYOUT = { widthScale: 0.55, bare: true };
+const isKarting = (mode) => mode === 'karting';
 
 const stage = initStage();
 initPWA(); // offline cache + background updates; the notices are part of the UI (src/pwa/PwaLayer.jsx)
@@ -87,13 +90,15 @@ function resize() {
 stage.onChange(resize);
 
 // ---------------------------------------------------------------- track handling
-function loadTrack(id) {
-  if (game.track && game.track.id === id) return game.track;
+function loadTrack(id, karting = false) {
+  karting = !!karting;
+  if (game.track && game.track.id === id && game.track.karting === karting) return game.track;
   if (game.track) {
     scene.remove(game.track.group);
     try { game.track.dispose(); } catch (e) { console.warn(e); }
   }
-  const track = buildTrack(id);
+  const track = buildTrack(id, karting ? KART_LAYOUT : undefined);
+  track.karting = karting;
   game.track = track;
   scene.add(track.group);
   scene.background = track.background || new THREE.Color(0x87b5e0);
@@ -146,12 +151,14 @@ function onPreview(p) {
   if (game.state !== 'menu') return;
   Object.assign(game.preview, p || {});
   const wantTrack = isTrackScreen() && game.preview.trackId ? game.preview.trackId : null;
+  // the track select of karting mode flies over the narrow layout
+  const karting = game.preview.screen === 'track' && isKarting(game.preview.mode);
   clearTimeout(game.pendingTrackTimer);
-  if (wantTrack && (!game.track || game.track.id !== wantTrack)) {
+  if (wantTrack && (!game.track || game.track.id !== wantTrack || game.track.karting !== karting)) {
     game.pendingTrackTimer = setTimeout(() => {
       if (game.state !== 'menu') return;
       clearPreviewCar();
-      loadTrack(wantTrack);
+      loadTrack(wantTrack, karting);
     }, 220);
   }
 }
@@ -180,12 +187,17 @@ function startRace(config) {
   endRace();
   camera.clearViewOffset();
   game.config = config;
-  const track = loadTrack(config.trackId);
+  const karting = isKarting(config.mode);
+  const track = loadTrack(config.trackId, karting);
   const timetrial = config.mode === 'timetrial';
+  // lap / race records of the narrow layout are kept apart from the normal ones
+  game.recordKey = karting ? `${track.id}@kart` : track.id;
   const race = new Race({
     scene,
     track,
-    playerCarId: config.carId,
+    playerCarId: karting ? KART.id : config.carId,
+    oneMake: karting ? KART.id : undefined, // everybody in the same go-kart
+    items: !karting,
     playerName: config.playerName || 'You',
     laps: config.laps || track.defaultLaps || 3,
     opponents: timetrial ? 0 : Math.max(0, Math.min(7, config.opponents ?? 7)),
@@ -204,6 +216,7 @@ function startRace(config) {
   ui.hideMenu();
   ui.hideResults();
   ui.hidePause();
+  ui.setManualGas(karting); // karting is about working the gas: no auto accelerate on touch
   ui.showHUD();
   gameCam.snap();
   audio.stopMusic();
@@ -227,9 +240,13 @@ function fmtTime(t) {
 }
 
 function wireRace(race) {
-  const trackId = game.track.id;
+  const trackId = game.recordKey;
   race.on('countdown', (n) => { ui.showCountdown(String(n)); audio.play('count'); });
-  race.on('go', () => { ui.showCountdown('GO!'); audio.play('go'); });
+  race.on('go', () => {
+    ui.showCountdown('GO!');
+    audio.play('go');
+    if (game.track.karting) setTimeout(() => { if (game.race === race && game.state === 'racing') ui.flashMessage('EASE OFF THE GAS TO TURN IN', 2600); }, 1100);
+  });
   race.on('lap', (car, lapNumber, lapTime, isBest) => {
     if (car !== race.player) return;
     audio.play('lap');
@@ -292,9 +309,9 @@ function onRaceOver(standings) {
   const me = standings.find((s) => s.isPlayer);
   let newRecord = !!game.newRecord;
   if (me && me.finished && me.finishTime > 0 && isFinite(me.finishTime) && cfg.mode !== 'championship' && !mp.active) {
-    const prev = ui.records.getBestRace(game.track.id, cfg.laps);
+    const prev = ui.records.getBestRace(game.recordKey, cfg.laps);
     if (!prev || me.finishTime < prev) {
-      ui.records.setBestRace(game.track.id, cfg.laps, me.finishTime);
+      ui.records.setBestRace(game.recordKey, cfg.laps, me.finishTime);
       newRecord = true;
     }
   }
@@ -717,4 +734,4 @@ audio.startMusic('menu');
 requestAnimationFrame(frame);
 
 // Debug handle for automated testing.
-window.__game = { game, net, mp, gfx, mpEnter, mpStart, ui, audio, renderer, scene, camera, startRace, toMenu, TRACKS, CARS, ITEMS };
+window.__game = { game, net, mp, gfx, mpEnter, mpStart, ui, audio, renderer, scene, camera, startRace, toMenu, TRACKS, CARS, KART, ITEMS };

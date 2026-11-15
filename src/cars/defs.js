@@ -62,7 +62,21 @@ export const CARS = [
   },
 ];
 
-export const CAR_BY_ID = Object.fromEntries(CARS.map((c) => [c.id, c]));
+/**
+ * Karting mode: everyone drives this same go-kart (not in CARS, so it never shows up in the car select).
+ *   powerUndersteer: share of steering authority lost at speed with the gas pinned — lift to turn in.
+ *   wallScrub:       extra speed lost on a wall hit — running wide costs real time.
+ */
+export const KART = {
+  id: 'gokart', name: 'Go-Kart', type: 'kart', class: 'Karting',
+  tagline: 'Same kart for everyone. The lap time is all you.',
+  color: '#2f6fed', accent: '#ffffff',
+  stats: { speed: 5, accel: 7, grip: 9, weight: 2 },
+  topSpeed: 34, acceleration: 23, gripFactor: 1.12, mass: 0.75, turnRate: 3.0, radius: 0.9,
+  powerUndersteer: 0.45, wallScrub: 0.4,
+};
+
+export const CAR_BY_ID = Object.fromEntries(CARS.concat(KART).map((c) => [c.id, c]));
 
 export function getCarDef(id) {
   return CAR_BY_ID[id] || CARS[0];

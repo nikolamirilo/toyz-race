@@ -4,7 +4,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { fmtTime, isTouch } from '../util.js';
 import { MULTIPLAYER, APP_VERSION } from '../../flags.js';
-import { DIFFICULTIES, MODE_LABEL, MAX_SEATS, MAX_LINKS, range, isOffline } from './menuModel.js';
+import { DIFFICULTIES, MODE_LABEL, MAX_SEATS, MAX_LINKS, range, isOffline, recordKey } from './menuModel.js';
 import { Item, Hints, Logo, CarSvg, Stars, BackBtn } from './items.jsx';
 
 const CLASS_CHIP = { Rookie: '', Amateur: 'y', Pro: 'p' };
@@ -51,6 +51,7 @@ function Main({ m, kit }) {
     kit.button('race', 'Single Race', 'Pick a track, beat the pack', () => m.pickMode('race')),
     // Multiplayer needs the relay server: while offline it stays visible but cannot be selected.
     MULTIPLAYER && kit.button('mp', 'Multiplayer', offline ? 'Offline · needs a network connection' : 'Host or join a room · up to 8', m.openMp, null, { off: offline, skip: isOffline }),
+    kit.button('kart', 'Karting', 'Narrow tracks · you work the gas · nail the apex', () => m.pickMode('karting')),
     kit.button('champ', 'Championship', m.tracks.length + ' tracks · points 10-8-6-5-4-3-2-1', () => m.pickMode('championship')),
     kit.button('tt', 'Time Trial', 'Just you and the clock', () => m.pickMode('timetrial')),
     kit.button('options', 'Options', 'Sound, graphics, driver', () => m.openOptions('main')),
@@ -167,6 +168,7 @@ function TrackSelect({ m, kit }) {
   const ti = m.trackIndex();
   const t = tracks[ti];
   const tt = sel.mode === 'timetrial';
+  const kart = sel.mode === 'karting';
   const laps = m.curLaps();
 
   const grid = {
@@ -183,12 +185,13 @@ function TrackSelect({ m, kit }) {
     kit.selector('opp', 'Opponents', { options: () => range(1, 7), get: () => sel.opponents, set: (v) => { sel.opponents = v; m.store.saveSel(); }, hidden: tt }),
     kit.selector('diff', 'Difficulty', { options: () => DIFFICULTIES, get: () => sel.difficulty, set: (v) => { sel.difficulty = v; m.store.saveSel(); }, hidden: tt }),
   ];
-  const go = kit.button('go', tt ? 'Start time trial' : 'Start race', null, m.startRace, 'tr-go');
+  const go = kit.button('go', tt ? 'Start time trial' : kart ? 'Start karting' : 'Start race', null, m.startRace, 'tr-go');
   const items = [grid, ...rows, go];
   useItems(m, items);
   const gb = m.nav.bind(grid, 0);
-  const bl = t ? records.getBestLap(t.id) : null;
-  const br = t ? records.getBestRace(t.id, laps) : null;
+  const rk = t ? recordKey(t.id, sel.mode) : null;
+  const bl = t ? records.getBestLap(rk) : null;
+  const br = t ? records.getBestRace(rk, laps) : null;
 
   return (
     <Screen name="tracksel" cls="tr-left">
@@ -196,7 +199,7 @@ function TrackSelect({ m, kit }) {
         <div className="tr-head">
           <BackBtn onBack={m.back} />
           <h2>Choose a track</h2>
-          <span className="tr-chip o">{MODE_LABEL[tt ? 'timetrial' : 'race']}</span>
+          <span className="tr-chip o">{MODE_LABEL[tt ? 'timetrial' : kart ? 'karting' : 'race']}</span>
         </div>
         <div className={cx('tr-trkgrid', gb.focused && 'tr-focus')} onMouseEnter={gb.onMouseEnter} onClick={gb.onClick}>
           {tracks.map((tr, i) => (
@@ -217,6 +220,7 @@ function TrackSelect({ m, kit }) {
         {t ? (
           <div className="tr-card tr-trkdetail">
             <div className="tr-td-desc">{t.description || ''}</div>
+            {kart ? <div className="tr-td-kart"><b>Karting</b> Narrow road, equal go-karts, no pickups. Flat out the kart runs wide: ease off the gas to turn in and clip the apex.</div> : null}
             <div className="tr-td-meta">
               <div className="tr-meta"><small>Difficulty</small><b><Stars n={t.difficulty} /></b></div>
               <div className="tr-meta"><small>Length</small><b>{t.lengthLabel || '—'}</b></div>
@@ -289,6 +293,7 @@ const KEY_ROWS = [
   [['R'], 'Reset car to the track'],
   [['ESC', '/', 'P'], 'Pause'],
   [['M'], 'Mute sound'],
+  [null, 'Karting: flat out the kart runs wide — ease off the gas to turn in'],
 ];
 const TOUCH_ROWS = [
   [['◀', '▶'], 'Steer — slide your left thumb between the two'],
@@ -297,6 +302,7 @@ const TOUCH_ROWS = [
   [['ITEM'], 'Use the item you are holding (or tap the item slot)'],
   [['❚❚', '/', '◉', '/', '↺'], 'Pause, change camera, reset car to the track'],
   [null, '“Auto accelerate” in Options drives for you: just steer, brake and drift'],
+  [null, 'Karting: the gas is always yours — ease off it to turn in'],
 ];
 
 function Controls({ m, kit }) {

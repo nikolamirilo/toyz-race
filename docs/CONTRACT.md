@@ -167,7 +167,7 @@ Items must be fun but short (≤ 1.5 s loss of control). In 'timetrial' mode: no
 ```js
 export function createUI(root /* #ui-root element */, { tracks /* TRACKS */, cars /* CARS */, items /* ITEMS */, handlers });
 // handlers: { onStart(config), onPreview({ screen, carId, trackId }), onResume(), onRestart(), onQuit(), onSettings(settings), onNextRace()?, onUiSound(name) }
-// config: { mode: 'race'|'timetrial'|'championship', trackId, carId, laps, opponents, difficulty, playerName }
+// config: { mode: 'race'|'karting'|'timetrial'|'championship', trackId, carId, laps, opponents, difficulty, playerName }
 ```
 
 returned `ui`:
@@ -232,3 +232,18 @@ keyboard input, attract mode, championship flow, wiring events to UI + audio.
   "Ready to play offline" once, "New version ready".
 - `public/manifest.webmanifest`: fullscreen, landscape, icons incl. maskable, screenshots for the install dialog.
   The title screen shows the build version (`APP_VERSION` from src/flags.js).
+
+## Karting mode
+
+`config.mode === 'karting'` (main menu -> Karting -> track select; there is no car select). A race like Single Race, but
+about driving the line rather than fighting the pack:
+
+- **Narrow layout**: `buildTrack(id, { widthScale: 0.55, bare: true })` — same centreline and scenery, road at 55% width,
+  no boost pads, obstacles or pickup crates (`KART_LAYOUT` in `src/main.js`). The track select flies over this layout.
+- **One make**: everybody drives `KART` (`src/cars/defs.js`, not listed in `CARS`), told apart by paint:
+  `new Race({ ..., playerCarId: KART.id, oneMake: KART.id, items: false })`.
+- **The gas matters**: `KART.powerUndersteer` takes steering authority away at speed while the throttle is down
+  (`powerSteerFactor()` in `src/cars/car.js`, the AI plans its corner speed with it), so a flat-out kart runs wide; easing
+  off turns it in. `KART.wallScrub` makes a wall hit cost real speed.
+- **Touch**: `ui.setManualGas(true)` — the auto accelerate option is ignored, the GAS pedal is always the player's.
+- **Records** are stored apart from the normal layout, under `<trackId>@kart`.

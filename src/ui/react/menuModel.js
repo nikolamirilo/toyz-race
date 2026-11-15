@@ -1,5 +1,5 @@
 // Menu state + actions, without any rendering (the React screens in Menu.jsx read it and call into it).
-// Flow: title -> main -> car select -> track select (skipped for championship) -> onStart(config)
+// Flow: title -> main -> car select (skipped for karting) -> track select (skipped for championship) -> onStart(config)
 // plus options and controls, and the multiplayer screens (CONTRACT-NET.md section 3):
 // main -> mp (name / host / join) -> car select -> "Connecting…" -> lobby (shown by the integrator).
 
@@ -13,7 +13,9 @@ export const DIFFICULTIES = [
   { value: 1, label: 'Normal' },
   { value: 2, label: 'Hard' },
 ];
-export const MODE_LABEL = { race: 'Single Race', championship: 'Championship', timetrial: 'Time Trial' };
+export const MODE_LABEL = { race: 'Single Race', karting: 'Karting', championship: 'Championship', timetrial: 'Time Trial' };
+/** Karting uses the narrow layout of each track: its records are stored under their own key (see src/main.js). */
+export const recordKey = (trackId, mode) => (mode === 'karting' ? trackId + '@kart' : trackId);
 export const MAX_SEATS = 8;
 export const MAX_LINKS = 3;
 const SCREEN_ALIASES = { mode: 'main', menu: 'main', cars: 'car', tracks: 'track', settings: 'options', help: 'controls', multiplayer: 'mp' };
@@ -104,7 +106,7 @@ export function createMenuModel({ tracks, cars, items, handlers, store, bump }) 
 
   m.emitPreview = () => {
     const lobbyTrack = m.current === 'lobby' && mp.lobby.settings.trackId;
-    if (h.onPreview) h.onPreview({ screen: m.current, carId: sel.carId, trackId: lobbyTrack || sel.trackId });
+    if (h.onPreview) h.onPreview({ screen: m.current, carId: sel.carId, trackId: lobbyTrack || sel.trackId, mode: sel.mode });
   };
   m.emitSettings = () => {
     store.saveSettings();
@@ -158,7 +160,8 @@ export function createMenuModel({ tracks, cars, items, handlers, store, bump }) 
     mp.purpose = null;
     sel.mode = mode;
     store.saveSel();
-    m.go('car', { index: 0 });
+    // karting: one go-kart for everyone, so there is no car to choose
+    m.go(mode === 'karting' ? 'track' : 'car', { index: 0 });
   };
   m.openMp = () => {
     mp.msg = '';
@@ -225,7 +228,7 @@ export function createMenuModel({ tracks, cars, items, handlers, store, bump }) 
 
   m.startRace = () => {
     store.saveSel();
-    if (h.onStart) h.onStart(m.buildConfig(sel.mode === 'timetrial' ? 'timetrial' : 'race'));
+    if (h.onStart) h.onStart(m.buildConfig(sel.mode === 'timetrial' || sel.mode === 'karting' ? sel.mode : 'race'));
   };
 
   // ---- multiplayer: name / host / join
@@ -415,7 +418,7 @@ export function createMenuModel({ tracks, cars, items, handlers, store, bump }) 
         m.go('mp', { index: join ? MP_JOIN_I : MP_HOST_I });
       } else m.go('main');
     },
-    track: () => m.go('car'),
+    track: () => m.go(sel.mode === 'karting' ? 'main' : 'car'),
     options: () => m.go(m.returnTo),
     controls: () => m.go(m.returnTo),
     mp: () => { mp.msg = ''; m.go('main'); },

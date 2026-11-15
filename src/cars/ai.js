@@ -1,7 +1,7 @@
 // Toyz Race — AI driver: pure-pursuit steering on the centreline (with lane offset), corner speed from a
 // precomputed curvature profile, obstacle / traffic avoidance, stuck + wrong-way recovery, mild rubber band.
 import { Vector3 } from 'three';
-import { maxYawRate, maxLateralAccel, brakeDecel, wrapAngle } from './car.js';
+import { maxYawRate, maxLateralAccel, brakeDecel, powerSteerFactor, wrapAngle } from './car.js';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
@@ -123,7 +123,8 @@ export class AIDriver {
       let v = Math.sqrt(aLat / ak);
       if (v < top) {
         // also respect the steering authority at that speed
-        for (let it = 0; it < 6 && ak * v > 0.85 * maxYawRate(def, v); it++) v *= 0.93;
+        // (karts: assume about half throttle through the corner)
+        for (let it = 0; it < 6 && ak * v > 0.85 * maxYawRate(def, v) * powerSteerFactor(def, v, 0.5); it++) v *= 0.93;
         const d = Math.max(0, k * ds - margin);
         const vNow = Math.sqrt(v * v + 2 * aBrake * d);
         if (vNow < vTarget) vTarget = vNow;
@@ -217,7 +218,7 @@ export class AIDriver {
     else {
       const vv = Math.max(aspeed, 4);
       const yawWanted = (2 * vv * Math.sin(err)) / dist;
-      steer = clamp((yawWanted / Math.max(0.3, maxYawRate(def, vv))) * 1.25, -1, 1);
+      steer = clamp((yawWanted / Math.max(0.3, maxYawRate(def, vv) * powerSteerFactor(def, vv, Math.max(0, car.controls.throttle)))) * 1.25, -1, 1);
     }
     steer += (1 - skill) * 0.14 * Math.sin(this._time * 2.3 + this._phase) * Math.min(1, aspeed / 10);
 

@@ -47,7 +47,7 @@ export function createUI(root, { tracks = [], cars = [], items = [], handlers = 
   if (typeof document === 'undefined' || !root) {
     const noop = () => {};
     return {
-      showMenu: noop, hideMenu: noop, showHUD: noop, hideHUD: noop, updateHUD: noop, showCountdown: noop,
+      showMenu: noop, hideMenu: noop, setManualGas: noop, showHUD: noop, hideHUD: noop, updateHUD: noop, showCountdown: noop,
       flashMessage: noop, showPause: noop, hidePause: noop, showResults: noop, hideResults: noop,
       showLobby: noop, updateLobby: noop, showMpError: noop, isLobbyVisible: () => false, getMenuScreen: () => null,
       getSettings: () => store.getSettings(),
@@ -85,9 +85,10 @@ export function createUI(root, { tracks = [], cars = [], items = [], handlers = 
 
   let hud = null;
   let touchc = null;
+  let manualGas = false; // karting: the player always works the gas, whatever the auto accelerate option says
   const onMount = ({ hud: hudNode, fx, touch }) => {
     hud = createHUD(hudNode, fx);
-    touchc = createTouchControls(touch, { handlers, getAutoGas: () => store.getSettings().autoGas, itemSlot: hud.itemEl });
+    touchc = createTouchControls(touch, { handlers, getAutoGas: () => !manualGas && store.getSettings().autoGas, itemSlot: hud.itemEl });
   };
 
   const reactRoot = createRoot(root);
@@ -156,6 +157,8 @@ export function createUI(root, { tracks = [], cars = [], items = [], handlers = 
       });
       syncTouch();
     },
+    /** (karting) true: touch controls ignore the auto accelerate option until set back to false */
+    setManualGas(on) { manualGas = !!on; syncTouch(); },
     showHUD() { hud.show(); syncTouch(); },
     hideHUD() { hud.hide(); syncTouch(); },
     updateHUD(data) {
