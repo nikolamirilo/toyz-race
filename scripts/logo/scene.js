@@ -1,5 +1,5 @@
-// Hero render of the blue rally car (Mud Muffin) for the logo / app icons: the real game model, mid-drift,
-// on a transparent background. Opened by scripts/generate-icons.mjs; ?size=<px> sets the square canvas size.
+// Cut-out render of a car (default: Needle Nine, the formula car of the app icon) for the in-game logo: the real
+// game model, mid-slide, on a transparent background. Opened by scripts/generate-icons.mjs; ?size=<px> sets the square canvas size.
 import * as THREE from 'three';
 import { Car } from '../../src/cars/index.js';
 
@@ -21,11 +21,15 @@ scene.add(new THREE.HemisphereLight(0xdfeeff, 0x4a3a66, 1.25));
 const key = new THREE.DirectionalLight(0xfff2d8, 2.6);
 key.position.set(4, 7, 6);
 scene.add(key);
-const rim = new THREE.DirectionalLight(0xffa640, 1.6); // warm kick from behind, matches the orange disc of the icon
+// neon kickers from behind, like the Midnight Megamart shelves of the app icon
+const rim = new THREE.DirectionalLight(0xff4fb0, 2.4);
 rim.position.set(-6, 3, -5);
 scene.add(rim);
+const rim2 = new THREE.DirectionalLight(0x35d9ff, 1.4);
+rim2.position.set(6, 2, -6);
+scene.add(rim2);
 
-const car = new Car(q.get('car') || 'mudmuffin');
+const car = new Car(q.get('car') || 'needlenine');
 car.placeAt(new THREE.Vector3(0, 0, 0), num('h', 0.62), null);
 car.steerAngle = num('steer', -0.95);   // opposite lock
 car._bodyRoll = num('roll', -0.15);     // leaning out of the slide

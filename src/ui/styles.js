@@ -43,7 +43,7 @@ html.tr-rotated .tr-root{--sal:env(safe-area-inset-top,0px); --sat:env(safe-area
 .tr-logo-race span:nth-child(2){transform:rotate(3deg) translateY(.02em)}
 .tr-logo-race span:nth-child(3){transform:rotate(-2deg) translateY(-.02em); color:var(--yellow)}
 .tr-logo-race span:nth-child(4){transform:rotate(2deg) translateY(.015em)}
-.tr-logo-car{position:absolute; left:2.02em; top:-1.0em; width:2.5em; height:auto; z-index:3; pointer-events:none; transform-origin:30% 70%; animation:tr-logo-car 3.2s ease-in-out infinite}
+.tr-logo-car{position:absolute; left:1.95em; top:-.86em; width:2.6em; height:auto; z-index:3; pointer-events:none; transform-origin:30% 70%; animation:tr-logo-car 3.2s ease-in-out infinite}
 @keyframes tr-logo-car{0%,100%{transform:rotate(0deg) translate(0,0)}50%{transform:rotate(-2.5deg) translate(-.03em,-.035em)}}
 .tr-logo-o{width:.84em; height:.84em; margin:0 .05em 0 .03em; align-self:center; transform:translateY(.015em); filter:drop-shadow(.055em .07em 0 var(--ink))}
 .tr-logo-o svg{width:100%; height:100%; display:block; animation:tr-spin 5s linear infinite}
