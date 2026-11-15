@@ -75,6 +75,7 @@ function applySettings(s) {
   if (!s) return;
   audio.setVolumes({ master: s.masterVolume, music: s.musicVolume, sfx: s.sfxVolume });
   gameCam.shakeEnabled = s.cameraShake !== false;
+  if (s.cameraView) gameCam.setMode(s.cameraView);
   if (s.quality !== game.quality) { game.quality = s.quality; applyQuality(s.quality); }
 }
 
@@ -544,7 +545,7 @@ const ui = createUI(document.getElementById('ui-root'), {
     },
     onSettings: applySettings,
     onPauseRequest() { if (game.state === 'racing' && !game.overlay) pause(); },
-    onCameraRequest() { if (game.state === 'racing') ui.flashMessage(`CAMERA: ${gameCam.nextMode().toUpperCase()}`, 900); },
+    onCameraRequest() { if (game.state === 'racing') cycleCamera(); },
     onResetRequest() { if (game.state === 'racing') resetPlayer(); },
     onUiSound(name) { audio.unlock(); audio.play(name); },
   },
@@ -560,12 +561,18 @@ input.onPress((code) => {
   }
   if (game.state === 'racing' && !game.overlay) {
     if (code === 'Escape' || code === 'KeyP') pause();
-    else if (code === 'KeyC') ui.flashMessage(`CAMERA: ${gameCam.nextMode().toUpperCase()}`, 900);
+    else if (code === 'KeyC') cycleCamera();
     else if (code === 'KeyR') resetPlayer();
   }
 });
 window.addEventListener('pointerdown', () => audio.unlock(), { once: false });
 window.addEventListener('blur', () => { if (!mp.active && game.state === 'racing' && game.race && game.race.state !== 'finished') pause(); });
+
+function cycleCamera() {
+  const name = gameCam.nextMode();
+  ui.setCameraView(gameCam.modeId);
+  ui.flashMessage(`CAMERA: ${name.toUpperCase()}`, 900);
+}
 
 function resetPlayer() {
   const race = game.race;
