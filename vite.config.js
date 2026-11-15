@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { attachRelay, mpInfoMiddleware } from './server/relay.js';
 
@@ -69,6 +70,7 @@ function devServiceWorkerOff() {
 
 export default defineConfig({
   plugins: [
+    react(),
     // Falsy entries are ignored by Vite: with the flag off the relay is never wired up.
     MULTIPLAYER ? multiplayerRelay() : relayDisabled(),
     devServiceWorkerOff(),
@@ -76,11 +78,13 @@ export default defineConfig({
     VitePWA({
       strategies: 'generateSW',
       filename: 'sw.js',
-      injectRegister: false, // src/pwa/register.js does it
+      registerType: 'prompt', // updates download in the background; src/pwa/ decides when to switch (never mid-race)
+      injectRegister: false, // src/pwa/register.js does it (virtual:pwa-register)
       manifest: false, // hand-written public/manifest.webmanifest (relative urls, works under any base path)
       devOptions: { enabled: false },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,woff,woff2,ttf,json,wasm,glb,gltf,bin,mp3,ogg,wav,m4a,jpg,jpeg,webp,avif,ktx2,hdr}'],
+        globIgnores: ['screenshots/**'], // only used by the install dialog, not by the game
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024, // the three.js game chunk is ~1 MB
         navigateFallback: 'index.html',
         // Never answer the multiplayer relay from the cache (ws upgrade on /mp, GET /mp/info).
@@ -93,7 +97,12 @@ export default defineConfig({
     }),
   ],
   // Substituted into the sources; src/flags.js turns it into the exported MULTIPLAYER constant.
-  define: { __MULTIPLAYER__: JSON.stringify(MULTIPLAYER) },
+  define: {
+    __MULTIPLAYER__: JSON.stringify(MULTIPLAYER),
+    // shown on the title screen, so it is easy to tell which version an installed app is running
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '0.0.0'),
+    __BUILD_ID__: JSON.stringify(new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')),
+  },
   server: { host: true, port: 5173, strictPort: true },
   preview: { host: true, port: 5173, strictPort: true },
 });
