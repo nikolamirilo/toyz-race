@@ -95,7 +95,9 @@ export class AIDriver {
     const L = info.length;
     const speed = car.speed;
     const aspeed = Math.abs(speed);
-    const hwHere = car.halfWidth || 8;
+    // (wall-less tracks: the physics band includes the slow runoff, the AI keeps to the road)
+    const trim = track.runoffBand ? track.runoffBand - 0.3 : 0;
+    const hwHere = (car.halfWidth || 8) - trim;
     if (!this._laneInit) { this._lane = car.lateral; this._laneInit = true; }
 
     // ---- rubber band ---------------------------------------------------------------------------------
@@ -206,7 +208,8 @@ export class AIDriver {
     let tl = car.trackT + Ld / L;
     tl -= Math.floor(tl);
     const s = track.sample(tl);
-    const lane = clamp(this._lane, -(s.halfWidth - car.radius - 0.6), s.halfWidth - car.radius - 0.6);
+    const laneMax = Math.max(0.3, s.halfWidth - trim - car.radius - 0.6);
+    const lane = clamp(this._lane, -laneMax, laneMax);
     const dx = s.pos.x + s.right.x * lane - car.pos.x;
     const dz = s.pos.z + s.right.z * lane - car.pos.z;
     const err = wrapAngle(Math.atan2(dx, dz) - car.heading);

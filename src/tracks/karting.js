@@ -1,6 +1,7 @@
 // Kart circuits — karting mode only. Nothing like the big scenic tracks: each one is a TOY KART TRACK SET, snap-together
 // plastic track pieces laid out on a table top in a giant room, with a block-built grandstand, peg-people spectators,
-// plastic trees, cones and tyre stacks. Short, flat and twisty (hairpins, esses), the road barely two karts wide.
+// plastic trees, cones and tyre stacks. Short, flat and twisty (hairpins, esses), the road barely two karts wide and
+// NO WALLS: run wide and you are on the table top, which is slow.
 import * as THREE from 'three';
 import * as TX from './textures.js';
 import { jitter } from './util.js';
@@ -14,7 +15,9 @@ const BASE = {
   halfWidth: 2.3,
   cornerRadius: 8,
   startFrac: 0.62,
-  edge: { kerb: 0.7, wall: 0.5 },
+  // no walls: a kerb, then `runoff` units of slow table top before the invisible limit
+  edge: { kerb: 0.7, wall: 0 },
+  runoff: 4,
   chevronCurvature: 1 / 11,
   chevron: { bg: '#ffd21f', fg: '#1b1b22' },
   boostAt: [],
@@ -37,7 +40,6 @@ export const paddock = {
   ],
   road: { style: 'toyOrange', fallback: 0xff7a1c, roughness: 0.35, metalness: 0.05 },
   kerb: [0xffffff, 0x2b7de9],
-  wall: { height: 0.7, block: 2.4, palette: [0x2b7de9, 0x3b8af5], top: [0x7fb4ff, 0x8fbfff], skirt: 0x1b4fb0 },
   gantry: { beam: 0x2b7de9, bannerBg: '#e53a2f', bannerFg: '#ffffff', accent: '#ffd21f' },
   theme: {
     kind: 'playmat', room: 0xbfe3f2, roomFloor: 0xd9b98a, table: 0x4fae5a, tableEdge: 0x2f7d3e,
@@ -59,7 +61,6 @@ export const hollow = {
   ],
   road: { style: 'toyBlue', fallback: 0x2f6fed, roughness: 0.35, metalness: 0.05 },
   kerb: [0xffffff, 0xe53a2f],
-  wall: { height: 0.7, block: 2.4, palette: [0xffc928, 0xffd24a], top: [0xffe38a, 0xffe9a0], skirt: 0xd99a10 },
   gantry: { beam: 0xffc928, bannerBg: '#2b7de9', bannerFg: '#ffffff', accent: '#e53a2f' },
   theme: {
     kind: 'desk', room: 0xe8cfa8, roomFloor: 0x8a6a4a, table: 0xc99560, tableEdge: 0x9a6c3c,
@@ -82,7 +83,6 @@ export const floodlit = {
   ],
   road: { style: 'toyGlow', fallback: 0x0f2a22, roughness: 0.4, metalness: 0.1, emissive: 0.9 },
   kerb: [0x7dff9a, 0x12332a],
-  wall: { height: 0.7, block: 2.4, palette: [0xff3fd0, 0xd92fb0], top: [0xff8ae4, 0xff6fd8], skirt: 0x7a1c66 },
   chevron: { bg: '#27f0ff', fg: '#0b0d1e' },
   gantry: { beam: 0x27f0ff, bannerBg: '#0f1228', bannerFg: '#7dff9a', accent: '#ff3fd0' },
   theme: {
@@ -164,7 +164,7 @@ function decorate(ctx) {
   // play mat print: painted "grass" islands and parking bays on the table top
   if (th.kind !== 'desk') {
     for (let k = 0; k < 16; k++) {
-      const p = ctx.spot('print', r.range(x0 + 12, x1 - 12), r.range(z0 + 12, z1 - 12), 5, false, false);
+      const p = ctx.spot('print', r.range(x0 + 12, x1 - 12), r.range(z0 + 12, z1 - 12), 7.6, false, false);
       b.cyl(th.night ? 'glow' : 'matte', 4 + r() * 3, 4 + r() * 3, 0.04, p.x, 0.02, p.z, th.night ? r.pick([0x27f0ff, 0x7dff9a, 0xff3fd0]) : r.pick([0x6fcf7a, 0x3f9a4c, 0xffd95a]), 14);
     }
   }
@@ -176,17 +176,17 @@ function decorate(ctx) {
   const off = (side, d, along = 0) => ({ x: s0.pos.x + s0.right.x * side * d + s0.tangent.x * along, z: s0.pos.z + s0.right.z * side * d + s0.tangent.z * along });
   for (let k = 0; k < 4; k++) {
     for (let j = -4; j <= 4; j++) {
-      const p = off(out, 8 + k * 2.4, 4 + j * 4.8);
+      const p = off(out, 9 + k * 2.4, 4 + j * 4.8);
       brick(b, p.x, 0, p.z, 2.4, 1.2 + k * 1.2, 4.8, BLOCKS[(j + k + 8) % BLOCKS.length], hd);
       if (r() < 0.8) peg(b, p.x, 1.2 + k * 1.2 + 0.28, p.z, r.pick(BLOCKS));
     }
   }
-  const gc = off(out, 11.6, 4);
+  const gc = off(out, 12.6, 4);
   ctx.reserveBox('grandstand', gc.x, gc.z, 10, 44, hd);
 
   // pit garage on the infield side: three block bays with a flat roof
   for (let j = -1; j <= 1; j++) {
-    const p = off(-out, 9.5, -14 + j * 7);
+    const p = off(-out, 11, -14 + j * 7);
     if (!ctx.free(p.x, p.z, 3.4, false)) continue;
     ctx.reserve('pit', p.x, p.z, 3.4, true);
     for (const e of [-1, 1]) brick(b, p.x + s0.tangent.x * e * 3, 0, p.z + s0.tangent.z * e * 3, 5, 3.4, 0.9, 0xf4f4f4, hd);
@@ -195,7 +195,7 @@ function decorate(ctx) {
   // bunting on toothpick poles
   ctx.bucket('flag', new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }), false, false);
   for (let k = -4; k <= 4; k++) {
-    const p = off(-out, 5.2, k * 7 + 4);
+    const p = off(-out, 8, k * 7 + 4);
     if (!ctx.free(p.x, p.z, 0.3, false)) continue;
     ctx.reserve('pole', p.x, p.z, 0.25, false);
     b.cyl('matte', 0.09, 0.09, 6, p.x, 0, p.z, 0xe8d2a6, 5);
@@ -203,17 +203,18 @@ function decorate(ctx) {
   }
 
   // ---- trackside toys: tyre stacks, cones, plastic trees, loose bricks, peg marshals ----
-  ctx.scatterBeside(80, 0.15, 0.6, 0.7, (x, z) => {
+  const RO = ctx.def.runoff + 0.4; // everything stands beyond the runoff strip
+  ctx.scatterBeside(70, RO, RO + 0.8, 0.7, (x, z) => {
     const n = 2 + (r() < 0.5 ? 1 : 0);
     for (let k = 0; k < n; k++) b.cyl('gloss', 0.7, 0.7, 0.5, x, k * 0.52, z, k === n - 1 ? r.pick(BLOCKS) : 0x17171c, 10);
   }, { name: 'tyres' });
-  ctx.scatterBeside(30, 0.3, 2.5, 0.4, (x, z) => trafficCone(ctx, x, 0, z, 0.8), { name: 'cone', avoidSolids: false });
-  ctx.scatterBeside(44, 1.6, 7, 1.8, (x, z) => toyTree(b, r, x, z, 0.9 + r() * 0.7), { name: 'tree', solid: true });
-  ctx.scatterBeside(40, 1.2, 8, 1.8, (x, z, rad, i, h) => {
+  ctx.scatterBeside(30, RO, RO + 2, 0.4, (x, z) => trafficCone(ctx, x, 0, z, 0.8), { name: 'cone', avoidSolids: false });
+  ctx.scatterBeside(44, RO + 0.6, RO + 6, 1.8, (x, z) => toyTree(b, r, x, z, 0.9 + r() * 0.7), { name: 'tree', solid: true });
+  ctx.scatterBeside(40, RO + 0.4, RO + 7, 1.8, (x, z, rad, i, h) => {
     const w = 1.6 * (1 + Math.floor(r() * 3));
     brick(b, x, 0, z, w, 1.2 * (1 + Math.floor(r() * 2)), 1.6, r.pick(BLOCKS), h + r() * TAU);
   }, { name: 'brick', solid: true });
-  ctx.scatterBeside(26, 0.9, 3, 0.6, (x, z) => peg(b, x, 0, z, r.pick(BLOCKS)), { name: 'marshal' });
+  ctx.scatterBeside(26, RO, RO + 2, 0.6, (x, z) => peg(b, x, 0, z, r.pick(BLOCKS)), { name: 'marshal' });
 
   // ---- what else is on the table ----
   const inTable = (x, z, rad) => ({ x: Math.min(x1 - rad - 4, Math.max(x0 + rad + 4, x)), z: Math.min(z1 - rad - 4, Math.max(z0 + rad + 4, z)) });

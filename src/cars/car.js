@@ -70,6 +70,7 @@ export class Car {
     this.puppet = false;         // (multiplayer) true: update() runs no physics, see _updatePuppet()
     this.wallHit = 0;
     this.drifting = false;
+    this.offRoad = 0;            // (wall-less tracks) how far the car centre is beyond the kerb, 0 on the road
 
     // extras (beyond the contract; handy for audio / camera / particles)
     this.carHit = 0;             // strongest car-vs-car impact since the last update()
@@ -226,6 +227,8 @@ export class Car {
       let res = (1.5 + 0.22 * Math.abs(vf)) * coast;
       if (vf > top) res += (vf - top) * 1.6;                              // bleed off boost overspeed
       if (handbrake) res += 9;
+      // off the road on a wall-less track: the surface drags the car down to a crawl
+      if (this.offRoad > 0 && Math.abs(vf) > 7) res += (10 + 7 * this.offRoad) * (Math.abs(vf) / 14);
       if (spinning) res += 7;
       if (res > 0) {
         const dv = res * dt;
@@ -276,6 +279,7 @@ export class Car {
       this._hasTrack = true;
       this.trackT = p.t; this.lateral = p.lateral; this.halfWidth = p.halfWidth;
       groundY = this._groundY = p.y;
+      this.offRoad = track.runoffBand ? Math.max(0, Math.abs(p.lateral) - (p.halfWidth - track.runoffBand)) : 0;
 
       // ---- walls --------------------------------------------------------------------------------------
       const lim = Math.max(0.2, p.halfWidth - this.radius);

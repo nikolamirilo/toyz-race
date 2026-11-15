@@ -101,7 +101,9 @@ function loadTrack(id) {
   scene.fog = track.fog || null;
   // The visible barrier sits outside ±halfWidth (kerb strip in between) while cars clamp their
   // centre at halfWidth - radius, so widen the physics band until bodywork just touches the wall.
-  const pad = Math.min(1.3, track.wallOffset - 0.2); // (kart circuits have a slimmer kerb)
+  // Wall-less tracks (kart circuits): the band reaches `runoff` beyond the kerb; everything past the kerb is slow.
+  const pad = track.runoff ? track.wallOffset + track.runoff + 0.9 : 1.3;
+  track.runoffBand = track.runoff ? track.runoff + 0.9 : 0;
   const sample0 = track.sample, project0 = track.project;
   track.sample = (t, out) => { const r = sample0(t, out); r.halfWidth += pad; return r; };
   track.project = (p, hint, out) => { const r = project0(p, hint, out); r.halfWidth += pad; return r; };

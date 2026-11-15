@@ -541,7 +541,9 @@ function buildRoad(ctx) {
 function buildEdges(ctx) {
   const { def, line, edge } = ctx;
   const { N, L, px, py, pz, rx, rz, hw } = line;
-  const W = def.wall;
+  // (kart circuits have no walls: `def.wall` is left out and only the kerbs are built)
+  const walled = !!def.wall;
+  const W = def.wall || { height: 0, palette: [0xffffff] };
   const soup = new QuadSoup(), glow = new QuadSoup();
   const palette = W.palette.map(col), topCols = (W.top || W.palette).map(col), skirt = col(W.skirt ?? W.palette[0]);
   const kerbCols = def.kerb.map(col);
@@ -564,6 +566,7 @@ function buildEdges(ctx) {
       // kerb
       const kc = kerbCols[Math.floor((i * nk) / N) % kerbCols.length];
       soup.quad(P(i, li, py[i] + 0.012), P(j, lj, py[j] + 0.012), P(j, kj, py[j] + 0.09), P(i, ki, py[i] + 0.09), 0, 1, 0, kc);
+      if (!walled) continue;
       // wall: inner face, top, outer face
       soup.quad(P(i, ki, py[i] - 0.05), P(j, kj, py[j] - 0.05), P(j, kj, py[j] + h), P(i, ki, py[i] + h), -nxr, 0, -nzr, c);
       (W.glowTop ? glow : soup).quad(P(i, ki, py[i] + h), P(j, kj, py[j] + h), P(j, oj, py[j] + h), P(i, oi, py[i] + h), 0, 1, 0, ct);
@@ -623,6 +626,7 @@ function buildGantry(ctx) {
 function buildChevrons(ctx) {
   const { def, line, edge, batch } = ctx;
   const { N, seg, px, py, pz, rx, rz, tx, tz, hw, curv } = line;
+  if (!def.wall) return; // the boards stand on the wall
   const thr = def.chevronCurvature ?? 1 / 30;
   const C = def.chevron || {};
   const pos = [], uv = [], nor = [], idx = [];
@@ -802,6 +806,7 @@ export function createTrack(def) {
     samples: line.N,
     ceilingHeight: ctx.ceilingHeight ?? null, // indoor tracks: keep cameras below this (ceiling/walls are see-through from outside)
     wallOffset: ctx.edgeTotal, // visual barrier sits this far outside ±halfWidth (kerb strip in between)
+    runoff: def.runoff || 0, // > 0: no walls. Cars may leave the road by this much beyond the kerb, where the ground is slow
     debug: { footprints: ctx.footprints, meshCount, lightCount, triangles: Math.round(triangles), line },
   };
   return track;
