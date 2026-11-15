@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 
+// Three chase distances. 'far' is the original default view.
+export const CAMERA_VIEWS = ['close', 'medium', 'far'];
 const MODES = [
-  { name: 'Chase', dist: 6.2, height: 2.7, look: 3.0, lookY: 0.9, stiff: 5.5 },
-  { name: 'Far chase', dist: 9.5, height: 4.4, look: 4.0, lookY: 0.8, stiff: 4.5 },
-  { name: 'Bumper', dist: -0.9, height: 0.75, look: 8.0, lookY: 0.6, stiff: 30 },
-  { name: 'Overhead', dist: 3.5, height: 24, look: 2.0, lookY: 0, stiff: 4 },
+  { id: 'close', name: 'Close', dist: 3.0, height: 1.3, look: 3.2, lookY: 0.65, stiff: 7.0, fovAdd: 0 },
+  { id: 'medium', name: 'Medium', dist: 4.7, height: 2.0, look: 3.1, lookY: 0.8, stiff: 6.2, fovAdd: 0 },
+  { id: 'far', name: 'Far', dist: 6.2, height: 2.7, look: 3.0, lookY: 0.9, stiff: 5.5, fovAdd: 0 },
 ];
 
 function angleLerp(a, b, k) {
@@ -17,7 +18,7 @@ function angleLerp(a, b, k) {
 export class GameCamera {
   constructor(camera) {
     this.camera = camera;
-    this.mode = 0;
+    this.mode = 2;
     this.yaw = 0;
     this.shake = 0;
     this.shakeEnabled = true;
@@ -30,6 +31,11 @@ export class GameCamera {
   }
 
   get modeName() { return MODES[this.mode].name; }
+  get modeId() { return MODES[this.mode].id; }
+  setMode(id) {
+    const i = MODES.findIndex((m) => m.id === id);
+    if (i >= 0 && i !== this.mode) { this.mode = i; this._init = false; }
+  }
   nextMode() { this.mode = (this.mode + 1) % MODES.length; this._init = false; return this.modeName; }
   snap() { this._init = false; }
   addShake(amount) { if (this.shakeEnabled) this.shake = Math.min(1, this.shake + amount); }
@@ -79,7 +85,7 @@ export class GameCamera {
 
     const top = car.def && car.def.topSpeed ? car.def.topSpeed : 35;
     const ratio = Math.min(1.4, Math.abs(car.speed) / top);
-    const targetFov = this.baseFov + ratio * 14 + (car.boostTime > 0 ? 8 : 0);
+    const targetFov = this.baseFov + (m.fovAdd || 0) + ratio * 14 + (car.boostTime > 0 ? 8 : 0);
     cam.fov += (targetFov - cam.fov) * (1 - Math.exp(-4 * dt));
     cam.updateProjectionMatrix();
   }

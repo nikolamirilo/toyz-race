@@ -51,6 +51,7 @@ export function createUI(root, { tracks = [], cars = [], items = [], handlers = 
       flashMessage: noop, showPause: noop, hidePause: noop, showResults: noop, hideResults: noop,
       showLobby: noop, updateLobby: noop, showMpError: noop, isLobbyVisible: () => false, getMenuScreen: () => null,
       getSettings: () => store.getSettings(),
+      setCameraView: noop,
       touch: { active: false, throttle: 0, steer: 0, handbrake: false, fire: false },
       records: store.records,
       isCapturingInput: () => false,
@@ -177,8 +178,14 @@ export function createUI(root, { tracks = [], cars = [], items = [], handlers = 
       syncTouch();
     },
     hideResults() { sync(results.hide); syncTouch(); },
-    /** { masterVolume, musicVolume, sfxVolume, quality, playerName, cameraShake, autoGas } */
+    /** { masterVolume, musicVolume, sfxVolume, quality, playerName, cameraShake, cameraView, autoGas } */
     getSettings() { return store.getSettings(); },
+    /** persist the in-race camera view ('close' | 'medium' | 'far') chosen with C / the camera button */
+    setCameraView(v) {
+      store.settings.cameraView = v;
+      store.saveSettings();
+      sync(bump); // the Options screen shows it
+    },
     /**
      * On-screen touch controls, polled by the integrator every frame (stable object, never replaced):
      * { active: bool — controls are on screen, throttle: -1|0|1, steer: -1|0|1 (+1 = left), handbrake: bool, fire: bool (held) }

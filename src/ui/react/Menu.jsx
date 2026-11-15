@@ -251,6 +251,11 @@ function Options({ m, kit, bump }) {
       get: () => settings.quality,
       set: set('quality'),
     }),
+    kit.selector('view', 'Camera view', {
+      options: () => [{ value: 'close', label: 'Close' }, { value: 'medium', label: 'Medium' }, { value: 'far', label: 'Far' }],
+      get: () => store.getSettings().cameraView,
+      set: set('cameraView'),
+    }),
     kit.selector('shake', 'Camera shake', { options: onOff, get: () => settings.cameraShake, set: set('cameraShake') }),
     auto,
     kit.text('name', 'Driver name', { get: () => settings.playerName, set: m.setPlayerName }),
