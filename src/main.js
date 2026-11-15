@@ -11,15 +11,13 @@ import { createNet } from './net/index.js';
 import { MULTIPLAYER } from './flags.js';
 import { createNameTags } from './core/nametags.js';
 import { initStage } from './core/stage.js';
-import { initPWA, createInstallHint } from './pwa/register.js';
+import { initPWA } from './pwa/register.js';
 
 const CHAMP_POINTS = [10, 8, 6, 5, 4, 3, 2, 1];
 const MAX_STEP = 1 / 60;
 
 const stage = initStage();
-initPWA();
-const installHint = createInstallHint();
-let installHintShown = null;
+initPWA(); // offline cache + background updates; the notices are part of the UI (src/pwa/PwaLayer.jsx)
 
 // ---------------------------------------------------------------- renderer
 const canvas = document.getElementById('game');
@@ -682,8 +680,6 @@ function frame(now) {
     }
   }
 
-  const hintWanted = game.state === 'menu' && (!ui.getMenuScreen || ['title', 'main'].includes(ui.getMenuScreen()));
-  if (hintWanted !== installHintShown) { installHintShown = hintWanted; installHint.setVisible(hintWanted); }
   nameTags.update(camera, !!game.race && game.state !== 'menu');
   gfx.render(dt);
 }

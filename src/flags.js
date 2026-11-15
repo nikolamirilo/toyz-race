@@ -15,3 +15,7 @@
 // expression to a literal when the flag IS defined, which is what makes the stripping work.
 /* global __MULTIPLAYER__ */
 export const MULTIPLAYER = typeof __MULTIPLAYER__ === 'undefined' ? false : __MULTIPLAYER__;
+
+/* global __APP_VERSION__, __BUILD_ID__ */
+/** "1.1.0 (202611151230)" in a build, "dev" when run outside Vite. */
+export const APP_VERSION = typeof __APP_VERSION__ === 'undefined' ? 'dev' : __APP_VERSION__ + ' (' + __BUILD_ID__ + ')';

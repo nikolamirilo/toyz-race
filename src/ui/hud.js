@@ -1,38 +1,16 @@
-// In-race HUD. update() is called every frame, so every DOM write is guarded by a cached value
+// In-race HUD logic (markup: react/Hud.jsx). update() is called every frame, so every DOM write is guarded by a cached value
 // and the minimap canvas is redrawn at most ~20 times per second.
 
-import { el, clamp, fmtTime, ordinalSuffix, retrigger } from './util.js';
+import { clamp, fmtTime, ordinalSuffix, retrigger } from './util.js';
 
 const MAP_INTERVAL_MS = 50;
 const SPEED_SCALE = 3.6; // units/s -> "km/h" style number
 
-export function createHUD(root) {
-  const node = el('div', 'tr-layer tr-hud');
-  node.innerHTML =
-    '<div class="tr-h-pos"><span class="tr-h-posn"><span data-r="posn">1</span><sup data-r="poss">st</sup></span><span class="tr-h-post tr-st" data-r="post">/ 8</span></div>' +
-    '<div class="tr-h-lap"><small>LAP</small><b data-r="lap">1 / 3</b></div>' +
-    '<div class="tr-h-item"><span class="tr-h-itemic" data-r="itemic"></span><span class="tr-h-itemt"><b data-r="itemn">NO ITEM</b><small class="tr-if-keys"><span class="tr-key">SPACE</span>to use</small></span></div>' +
-    '<div class="tr-h-times">' +
-    '<small>TIME</small><b class="big" data-r="time">0:00.00</b>' +
-    '<small>LAP</small><b data-r="lapt">0:00.00</b>' +
-    '<small>BEST</small><b class="best" data-r="best">-:--.--</b>' +
-    '<small class="dim">LAST</small><b class="dim" data-r="last">-:--.--</b>' +
-    '</div>' +
-    '<div class="tr-h-map"><canvas></canvas></div>' +
-    '<div class="tr-h-speed">' +
-    '<svg viewBox="0 0 120 104"><defs><linearGradient id="tr-speedgrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#19d3c5"/><stop offset=".6" stop-color="#ffd02e"/><stop offset="1" stop-color="#ff6b1a"/></linearGradient></defs>' +
-    '<path class="tr-h-arcbg" d="M16.7 85 A50 50 0 1 1 103.3 85"/>' +
-    '<path class="tr-h-arcbg2" d="M16.7 85 A50 50 0 1 1 103.3 85"/>' +
-    '<path class="tr-h-arc" pathLength="100" d="M16.7 85 A50 50 0 1 1 103.3 85"/></svg>' +
-    '<div class="tr-h-kmh"><b data-r="kmh">0</b><small>KM/H</small></div>' +
-    '<div class="tr-h-boost">BOOST</div>' +
-    '</div>' +
-    '<div class="tr-h-wrong">↺ WRONG WAY</div>';
-  root.appendChild(node);
-  // countdown + banner live on their own always-on layer so they work even while the HUD is hidden
-  const fx = el('div', 'tr-layer tr-hud tr-fx on', '<div class="tr-h-count"></div><div class="tr-h-flash"></div>');
-  root.appendChild(fx);
-
+/**
+ * Per-frame HUD controller over the markup rendered by react/Hud.jsx (`node` = .tr-hud, `fx` = countdown / banner layer).
+ * Updates go straight to the DOM, never through React state: updateHUD() runs 60 times a second.
+ */
+export function createHUD(node, fx) {
   // ---- cached refs: each [data-r] gets a dedicated text node for cheap updates
   const text = {};
   node.querySelectorAll('[data-r]').forEach((n) => {
@@ -351,8 +329,6 @@ export function createHUD(root) {
       window.removeEventListener('resize', onResize);
       if (ro) ro.disconnect();
       reset();
-      node.remove();
-      fx.remove();
     },
   };
 }

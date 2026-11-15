@@ -1,7 +1,8 @@
 # Toyz Race — module contract
 
-Original 3D toy RC-car arcade racer for the browser. Vite + three.js (ES modules, plain JS, no TypeScript,
-no other runtime dependencies). Everything is procedural: NO external assets (no image/model/audio files,
+Original 3D toy RC-car arcade racer for the browser. Vite + three.js + React (ES modules, plain JS / JSX, no
+TypeScript; React only in the UI layer, src/ui/ and src/pwa/). Installable PWA that plays fully offline except for
+multiplayer (see "PWA" below). Everything is procedural: NO external assets (no image/model/audio files,
 no network fetches). Textures come from canvas, sounds from WebAudio synthesis.
 
 All names, cars, tracks and art are ORIGINAL. Do not use names, car names, track names, logos or designs
@@ -187,7 +188,10 @@ ui.getSettings();                  // { masterVolume 0..1, musicVolume 0..1, sfx
 ui.records;                        // helper: { getBestLap(trackId), setBestLap(trackId, t), getBestRace(trackId, laps), setBestRace(...) } via localStorage
 ```
 
-UI is DOM/CSS (injected `<style>`), `pointer-events: auto` only on interactive panels. Full keyboard navigation in menus
+UI is React (src/ui/react/) over small external stores, so the `ui.*` API above stays imperative and synchronous;
+styling is the injected `<style>` from src/ui/styles.js. The HUD and the touch controls render their markup with React
+but write per-frame values straight to the DOM (src/ui/hud.js, src/ui/touch.js). `pointer-events: auto` only on
+interactive panels. Full keyboard navigation in menus
 (arrows / Enter / Esc) plus mouse. Menus are translucent so the 3D attract scene shows through (on car select the
 integrator shows the selected car on a turntable on the right half of the screen; on track select a fly-over of the
 selected track — the UI must leave that half reasonably clear and call `onPreview` whenever the highlighted car/track or
@@ -213,3 +217,18 @@ audio.setMuted(bool);
 
 Renderer, scene lifecycle, game state machine (menu / racing / paused / results), chase + alternative cameras,
 keyboard input, attract mode, championship flow, wiring events to UI + audio.
+
+## PWA (src/pwa/)
+
+- `vite-plugin-pwa` (workbox `generateSW`) precaches every game file on the FIRST visit, before the app is even
+  installed: from then on everything except multiplayer runs with no network. Multiplayer needs the relay server, so
+  while `navigator.onLine` is false the menu greys it out and refuses to host / join.
+- Updates (`registerType: 'prompt'`, src/pwa/register.js): while online the app checks for a new version at launch,
+  every 30 min, when the connection returns and when the app comes back to the foreground. A new version downloads in
+  the background and waits. It is switched to (one reload) only when that cannot interrupt a race: at launch before
+  the player touches anything, while the app is in the background on the title / main menu, or when the player taps
+  "Restart" on the update notice.
+- Notices (src/pwa/PwaLayer.jsx, title / main menu only): Install button (Chromium prompt, iOS instructions),
+  "Ready to play offline" once, "New version ready".
+- `public/manifest.webmanifest`: fullscreen, landscape, icons incl. maskable, screenshots for the install dialog.
+  The title screen shows the build version (`APP_VERSION` from src/flags.js).

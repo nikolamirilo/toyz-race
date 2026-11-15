@@ -76,6 +76,7 @@ html.tr-rotated .tr-root{--sal:env(safe-area-inset-top,0px); --sat:env(safe-area
 .tr-btn.tr-focus{background:var(--yellow); color:var(--ink); transform:translateX(.7em); box-shadow:0 .26em 0 var(--ink),0 0 0 .14em var(--cream),0 0 1.4em rgba(255,208,46,.45)}
 .tr-btn.tr-focus .tr-btn-s{color:#5a4a10}
 .tr-btn.tr-off{opacity:.55}
+.tr-ver{opacity:.6; font-weight:600; letter-spacing:0; text-transform:none}
 .tr-btn.tr-off.tr-focus{opacity:.8}
 .tr-btn.tr-focus::before{content:""; position:absolute; left:-1.05em; top:50%; margin-top:-.45em; border:.45em solid transparent; border-left:.7em solid var(--yellow); filter:drop-shadow(0 0 .1em var(--ink)); animation:tr-nudge .7s ease-in-out infinite}
 @keyframes tr-nudge{50%{transform:translateX(.2em)}}
