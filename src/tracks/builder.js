@@ -698,7 +698,8 @@ function buildGrid(ctx) {
   for (let i = 0; i < 8; i++) {
     const back = 4.5 + i * 3.3;
     const s = sample(1 - back / line.L);
-    const lat = (i % 2 === 0 ? -1 : 1) * s.halfWidth * 0.38;
+    // (kart circuits: the road is barely two karts wide, keep the pairs from overlapping)
+    const lat = (i % 2 === 0 ? -1 : 1) * Math.max(s.halfWidth * 0.38, 1.05);
     grid.push({
       pos: new THREE.Vector3(s.pos.x + s.right.x * lat, s.pos.y, s.pos.z + s.right.z * lat),
       heading: Math.atan2(s.tangent.x, s.tangent.z),

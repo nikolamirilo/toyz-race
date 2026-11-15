@@ -40,7 +40,7 @@ function App({ hub, menu, overlays, kit, bump, onMount }) {
   );
 }
 
-export function createUI(root, { tracks = [], cars = [], items = [], handlers = {} } = {}) {
+export function createUI(root, { tracks = [], kartTracks = [], cars = [], items = [], handlers = {} } = {}) {
   const store = createStore();
 
   // Headless (node) fallback: same API, no DOM.
@@ -77,7 +77,7 @@ export function createUI(root, { tracks = [], cars = [], items = [], handlers = 
     return out;
   };
 
-  const menu = createMenuModel({ tracks, cars, items, handlers, store, bump });
+  const menu = createMenuModel({ tracks, kartTracks, cars, items, handlers, store, bump });
   const overlays = createOverlays({ handlers, bump });
   const { pause, results } = overlays;
   const sound = (n) => { if (handlers.onUiSound) handlers.onUiSound(n); };
@@ -158,7 +158,7 @@ export function createUI(root, { tracks = [], cars = [], items = [], handlers = 
       syncTouch();
     },
     /** (karting) true: touch controls ignore the auto accelerate option until set back to false */
-    setManualGas(on) { manualGas = !!on; syncTouch(); },
+    setManualGas(on) { manualGas = !!on; touchc.node.classList.toggle('kart', manualGas); syncTouch(); },
     showHUD() { hud.show(); syncTouch(); },
     hideHUD() { hud.hide(); syncTouch(); },
     updateHUD(data) {

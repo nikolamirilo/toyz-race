@@ -14,8 +14,6 @@ export const DIFFICULTIES = [
   { value: 2, label: 'Hard' },
 ];
 export const MODE_LABEL = { race: 'Single Race', karting: 'Karting', championship: 'Championship', timetrial: 'Time Trial' };
-/** Karting uses the narrow layout of each track: its records are stored under their own key (see src/main.js). */
-export const recordKey = (trackId, mode) => (mode === 'karting' ? trackId + '@kart' : trackId);
 export const MAX_SEATS = 8;
 export const MAX_LINKS = 3;
 const SCREEN_ALIASES = { mode: 'main', menu: 'main', cars: 'car', tracks: 'track', settings: 'options', help: 'controls', multiplayer: 'mp' };
@@ -47,7 +45,7 @@ export const range = (a, b) => {
   return o;
 };
 
-export function createMenuModel({ tracks, cars, items, handlers, store, bump }) {
+export function createMenuModel({ tracks, kartTracks = [], cars, items, handlers, store, bump }) {
   const { settings, sel, records } = store;
   const h = handlers || {};
   const sound = (n) => { if (h.onUiSound) h.onUiSound(n); };
@@ -56,6 +54,7 @@ export function createMenuModel({ tracks, cars, items, handlers, store, bump }) 
   if (!MODE_LABEL[sel.mode]) sel.mode = 'race';
   if (!cars.some((c) => c.id === sel.carId)) sel.carId = cars.length ? cars[0].id : null;
   if (!tracks.some((t) => t.id === sel.trackId)) sel.trackId = tracks.length ? tracks[0].id : null;
+  if (!kartTracks.some((t) => t.id === sel.kartTrackId)) sel.kartTrackId = kartTracks.length ? kartTracks[0].id : null;
   if (!(sel.laps >= 2 && sel.laps <= 8)) sel.laps = null;
   if (!(sel.opponents >= 1 && sel.opponents <= 7)) sel.opponents = 7;
   if (![0, 1, 2].includes(sel.difficulty)) sel.difficulty = 1;
@@ -90,14 +89,17 @@ export function createMenuModel({ tracks, cars, items, handlers, store, bump }) 
 
   // ---- selection helpers
   m.carIndex = () => Math.max(0, cars.findIndex((c) => c.id === sel.carId));
-  m.trackIndex = () => Math.max(0, tracks.findIndex((t) => t.id === sel.trackId));
-  m.curTrack = () => tracks[m.trackIndex()];
+  // karting has its own circuits (and remembers its own pick)
+  const trackKey = () => (sel.mode === 'karting' && kartTracks.length ? 'kartTrackId' : 'trackId');
+  m.trackList = () => (trackKey() === 'kartTrackId' ? kartTracks : tracks);
+  m.trackIndex = () => Math.max(0, m.trackList().findIndex((t) => t.id === sel[trackKey()]));
+  m.curTrack = () => m.trackList()[m.trackIndex()];
   m.curLaps = () => sel.laps || Math.min(8, Math.max(2, (m.curTrack() && m.curTrack().defaultLaps) || 3));
 
   m.normSettings = (raw, base) => {
     const b = base || {};
     const o = Object.assign({}, b, raw || {});
-    if (!tracks.some((t) => t.id === o.trackId)) o.trackId = tracks.some((t) => t.id === b.trackId) ? b.trackId : (m.curTrack() ? m.curTrack().id : null);
+    if (!tracks.some((t) => t.id === o.trackId)) o.trackId = tracks.some((t) => t.id === b.trackId) ? b.trackId : sel.trackId;
     o.laps = int(o.laps, 2, 8, int(b.laps, 2, 8, m.curLaps()));
     o.difficulty = int(o.difficulty, 0, 2, int(b.difficulty, 0, 2, sel.difficulty));
     o.bots = int(o.bots, 0, MAX_SEATS - 1, int(b.bots, 0, MAX_SEATS - 1, MAX_SEATS - 1));
@@ -106,7 +108,7 @@ export function createMenuModel({ tracks, cars, items, handlers, store, bump }) 
 
   m.emitPreview = () => {
     const lobbyTrack = m.current === 'lobby' && mp.lobby.settings.trackId;
-    if (h.onPreview) h.onPreview({ screen: m.current, carId: sel.carId, trackId: lobbyTrack || sel.trackId, mode: sel.mode });
+    if (h.onPreview) h.onPreview({ screen: m.current, carId: sel.carId, trackId: lobbyTrack || (m.current === 'track' ? sel[trackKey()] : sel.trackId) });
   };
   m.emitSettings = () => {
     store.saveSettings();
@@ -182,11 +184,11 @@ export function createMenuModel({ tracks, cars, items, handlers, store, bump }) 
     bump();
   };
   m.setTrack = (i) => {
-    const n = tracks.length;
+    const list = m.trackList(), n = list.length;
     if (!n) return;
     i = ((i % n) + n) % n;
-    if (tracks[i].id === sel.trackId) return;
-    sel.trackId = tracks[i].id;
+    if (list[i].id === sel[trackKey()]) return;
+    sel[trackKey()] = list[i].id;
     store.saveSel();
     sound('ui-move');
     m.emitPreview();
@@ -514,7 +516,7 @@ export function createMenuModel({ tracks, cars, items, handlers, store, bump }) 
     m.visible = false;
     bump();
   };
-  m.getSelection = () => ({ mode: sel.mode, carId: sel.carId, trackId: sel.trackId, laps: m.curLaps(), opponents: sel.opponents, difficulty: sel.difficulty });
+  m.getSelection = () => ({ mode: sel.mode, carId: sel.carId, trackId: sel[trackKey()], laps: m.curLaps(), opponents: sel.opponents, difficulty: sel.difficulty });
   m.isTouch = isTouch;
 
   return m;

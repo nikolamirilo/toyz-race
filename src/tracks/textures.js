@@ -21,12 +21,14 @@ function roundRect(g, x, y, w, h, r) {
   g.closePath();
 }
 
-/** Road: u across (canvas x), v along (canvas y). styles: paving | mat | neon | planks */
+/** Road: u across (canvas x), v along (canvas y). styles: paving | mat | neon | planks | asphalt | ice */
 export const drawRoad = (style) => (g, w, h) => {
   const S = {
     paving: { base: '#8d8983', sp: ['#7c7872', '#9d9992', '#a8a39b', '#6f6b66'], edge: '#f6f1e4', dash: '#ffd84a' },
     mat: { base: '#3a3e4b', sp: ['#333743', '#444958', '#2d303b'], edge: '#ffd23c', dash: '#f4f4f4' },
     neon: { base: '#0f1228', sp: ['#141837', '#0b0d1e', '#1a1f45'], edge: '#27f0ff', dash: '#ff3fd0' },
+    asphalt: { base: '#4a4d55', sp: ['#43464e', '#53565f', '#3c3f46'], edge: '#f4f4f4', dash: '#4a4d55' },
+    ice: { base: '#cfe3f2', sp: ['#bcd5ea', '#e2f0fa', '#a9c8e2', '#f2f8fd'], edge: '#3a7bd5', dash: '#3a7bd5' },
     planks: { base: '#b98a55', sp: ['#a97b49', '#c79a63'], edge: '#fbf6ea', dash: '#fbf6ea' },
   }[style];
   g.fillStyle = S.base;
